@@ -1,7 +1,9 @@
-import { createApp } from 'vue';
+import { createApp, reactive } from 'vue';
 import App from './App.vue';
 import router from './router';
 
-createApp(App)
+const app = createApp(App)
   .use(router)
   .mount('#app');
+
+app.user = reactive({ loggedIn: false, userType: null });
