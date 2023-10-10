@@ -21,6 +21,8 @@ login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
+admin_creds = {'username':'admin', 'password': 'password'}
+
 # @app.after_request
 # def after_request(response):
 #     header = response.headers
@@ -46,8 +48,8 @@ def logout():
     return redirect(url_for('login'))
 
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
+@app.route('/login_user', methods=['GET', 'POST'])
+def login_user():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
@@ -63,6 +65,19 @@ def login():
         else:
             flash("Login unsuccessful. Check username and password.", "danger")
     return render_template("login.html")
+
+
+@app.route('/login_manager', methods=['POST'])
+def login_manager():
+    data = request.json
+    username = data['username']
+    password = data['password']
+
+    if username == admin_creds["username"] and password == admin_creds["password"]:
+        return jsonify({"message": "Login successful!", "status": "success"}), 200
+    else:
+        return jsonify({"message": "Login failed. Invalid credentials.", "status": "fail"}), 401
+
 
 
 
@@ -149,6 +164,10 @@ def register():
         db.session.commit()
         return jsonify({"message": "Registration successful!"}), 200
 
+@app.route('/pending-requests', methods=['GET'])
+def get_pending_requests():
+    pending_requests = ApprovalRequest.query.all()
+    return jsonify({"requests": [{"id": r.id, "username": r.username, "category": r.category} for r in pending_requests]})
 
 
 
