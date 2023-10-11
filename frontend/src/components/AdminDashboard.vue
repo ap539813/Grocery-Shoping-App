@@ -48,7 +48,6 @@
           });
           let data = await response.json();
           if (data.status === "success") {
-            // Remove approved request from the list
             this.requests = this.requests.filter(request => request.id !== requestId);
           } else {
             console.error("Error approving request:", data.message);
