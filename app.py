@@ -48,38 +48,6 @@ def logout():
     return redirect(url_for('login'))
 
 
-@app.route('/login_user', methods=['GET', 'POST'])
-def login_user():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        user = User.query.filter_by(username=username).first()
-        manager = Manager.query.filter_by(username=username).first()
-
-        if user and user.password == password:
-            login_user(user)
-            return redirect(url_for("some_protected_route"))
-        elif manager and manager.password == password:
-            login_user(manager)
-            return redirect(url_for("some_protected_route"))
-        else:
-            flash("Login unsuccessful. Check username and password.", "danger")
-    return render_template("login.html")
-
-
-@app.route('/login_manager', methods=['POST'])
-def login_manager():
-    data = request.json
-    username = data['username']
-    password = data['password']
-
-    if username == admin_creds["username"] and password == admin_creds["password"]:
-        return jsonify({"message": "Login successful!", "status": "success"}), 200
-    else:
-        return jsonify({"message": "Login failed. Invalid credentials.", "status": "fail"}), 401
-
-
-
 
 class Manager(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -149,8 +117,9 @@ def register():
 
     existing_user = User.query.filter_by(username=username).first()
     existing_manager = Manager.query.filter_by(username=username).first()
+    existing_manager_request = ApprovalRequest.query.filter_by(username = username, category = "manager").first()
 
-    if existing_user or existing_manager:
+    if existing_user or existing_manager or existing_manager_request:
         return jsonify({"message": "Username already taken!"}), 400
 
     if is_manager:
@@ -168,6 +137,71 @@ def register():
 def get_pending_requests():
     pending_requests = ApprovalRequest.query.all()
     return jsonify({"requests": [{"id": r.id, "username": r.username, "category": r.category} for r in pending_requests]})
+
+
+@app.route('/approve-request/<int:request_id>', methods=['POST'])
+def approve_request(request_id):
+    request_to_approve = ApprovalRequest.query.get(request_id)
+    
+    if not request_to_approve:
+        return jsonify({"message": "Request not found", "status": "fail"}), 404
+
+    if request_to_approve.category == "manager":
+        new_manager = Manager(username=request_to_approve.username, password=request_to_approve.password)
+        db.session.add(new_manager)
+        
+        db.session.delete(request_to_approve)
+        
+        db.session.commit()
+
+        return jsonify({"message": "Manager approved and added", "status": "success"}), 200
+
+
+    return jsonify({"message": "Request type not handled", "status": "fail"}), 400
+
+
+@app.route('/login-manager', methods=['POST'])
+def login_manager():
+    data = request.json
+    username = data['username']
+    password = data['password']
+    
+    manager = Manager.query.filter_by(username=username).first()
+    
+    if manager and manager.password == password:
+        return jsonify({"message": "Login successful!", "status": "success"}), 200
+    else:
+        return jsonify({"message": "Invalid credentials", "status": "fail"}), 401
+
+@app.route('/login_user', methods=['GET', 'POST'])
+def login_user():
+    if request.method == "POST":
+        username = request.form.get("username")
+        password = request.form.get("password")
+        user = User.query.filter_by(username=username).first()
+        manager = Manager.query.filter_by(username=username).first()
+
+        if user and user.password == password:
+            login_user(user)
+            return redirect(url_for("some_protected_route"))
+        elif manager and manager.password == password:
+            login_user(manager)
+            return redirect(url_for("some_protected_route"))
+        else:
+            flash("Login unsuccessful. Check username and password.", "danger")
+    return render_template("login.html")
+
+
+@app.route('/login_admin', methods=['POST'])
+def login_admin():
+    data = request.json
+    username = data['username']
+    password = data['password']
+
+    if username == admin_creds["username"] and password == admin_creds["password"]:
+        return jsonify({"message": "Login successful!", "status": "success"}), 200
+    else:
+        return jsonify({"message": "Login failed. Invalid credentials.", "status": "fail"}), 401
 
 
 
