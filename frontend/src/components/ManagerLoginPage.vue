@@ -6,7 +6,7 @@
     </div>
   </template>
   
-  <script>
+<script>
   export default {
     data() {
       return {
@@ -15,13 +15,34 @@
       };
     },
     methods: {
-      login() {
-        // Handle the registration logic here
-        console.log('User registered:', this.username);
+      async login() {
+        try {
+          const response = await fetch('http://127.0.0.1:5000/login-manager', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              username: this.username,
+              password: this.password
+            })
+          });
+          
+          const data = await response.json();
+          
+          if (data.status === 'success') {
+            alert('Manager login successful!');
+            this.$router.push({ name: 'ManagerDashboard' });
+          } else {
+            alert('Login failed!');
+          }
+        } catch (error) {
+          console.error("There was an error logging in:", error);
+        }
       }
     }
   }
-  </script>
+</script>
   
   <style scoped>
   /* Add styling for the login page here */
