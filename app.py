@@ -19,17 +19,17 @@ db = SQLAlchemy(app)
 
 login_manager = LoginManager()
 login_manager.init_app(app)
-login_manager.login_view = 'login'
+# login_manager.login_view = 'login'
 
 admin_creds = {'username':'admin', 'password': 'password'}
 
-# @app.after_request
-# def after_request(response):
-#     header = response.headers
-#     header['Access-Control-Allow-Origin'] = 'http://localhost:8080'
-#     header['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
-#     header['Access-Control-Allow-Methods'] = 'GET,POST'
-#     return response
+@app.after_request
+def after_request(response):
+    header = response.headers
+    header['Access-Control-Allow-Origin'] = 'http://localhost:8080'
+    header['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
+    header['Access-Control-Allow-Methods'] = 'GET,POST'
+    return response
 
 
 
@@ -169,12 +169,13 @@ def login_manager():
     manager = Manager.query.filter_by(username=username).first()
     
     if manager and manager.password == password:
+        login_user(manager)
         return jsonify({"message": "Login successful!", "status": "success"}), 200
     else:
         return jsonify({"message": "Invalid credentials", "status": "fail"}), 401
 
 @app.route('/login_user', methods=['GET', 'POST'])
-def login_user():
+def login_user_person():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
@@ -204,6 +205,38 @@ def login_admin():
         return jsonify({"message": "Login failed. Invalid credentials.", "status": "fail"}), 401
 
 
+
+@app.route('/categories', methods=['GET'])
+def category():
+    if (current_user.is_authenticated):
+        categories = Category.query.all()
+        for category in categories:
+            print(category)
+            if category:
+                products_for_category = category.products
+                print(products_for_category)
+        return jsonify({"categories": categories, "manager": current_user})
+    else:
+        return jsonify({"categories": None, "manager": None})
+    
+@app.route('/save_category', methods=['POST'])
+def save_category():
+    data = request.json
+    print(data)
+    category_name = data.get('category_name')
+    
+    if not category_name:
+        return jsonify({'status': 'error', 'message': 'Category name is required'}), 400
+    
+    new_category = Category(name=category_name)
+    
+    try:
+        db.session.add(new_category)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Category saved successfully'})
+    except Exception as e:
+        print(e)
+        return jsonify({'status': 'error', 'message': 'An error occurred: ' + str(e)}), 500
 
 if __name__ == "__main__":
     app.run(debug=True, host='localhost', port=5000)
