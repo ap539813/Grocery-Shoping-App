@@ -1,4 +1,5 @@
 <template>
+  <h1>User Login</h1>
     <div class="user-login-page">
       <input type="text" v-model="username" placeholder="Username" />
       <input type="password" v-model="password" placeholder="Password" />
