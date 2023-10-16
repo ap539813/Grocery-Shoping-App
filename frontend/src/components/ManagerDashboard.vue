@@ -98,7 +98,10 @@ export default {
   methods: {
     async fetchUserAndCategories(){
       try {
-            let response = await fetch("http://127.0.0.1:5000/categories");
+            let response = await fetch("http://127.0.0.1:5000/categories", {
+                method: 'GET',
+                credentials: 'include'
+            });
             let data = await response.json();
             console.log(data)
             this.categories = data.categories;

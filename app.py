@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, make_response
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import json
@@ -8,7 +8,10 @@ from flask_cors import CORS
 
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:8080"], methods=["GET", "POST", "PUT", "DELETE"], allow_headers=["Content-Type", "Authorization"], supports_credentials=True)
+CORS(app, origins=["http://localhost:8080"], 
+     methods=["GET", "POST", "PUT"], 
+     allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Origin"], 
+     supports_credentials=True)
 
 with open('config.json') as config_file:
     config_data = json.load(config_file)
@@ -22,14 +25,6 @@ login_manager.init_app(app)
 # login_manager.login_view = 'login'
 
 admin_creds = {'username':'admin', 'password': 'password'}
-
-@app.after_request
-def after_request(response):
-    header = response.headers
-    header['Access-Control-Allow-Origin'] = 'http://localhost:8080'
-    header['Access-Control-Allow-Headers'] = 'Content-Type,Authorization'
-    header['Access-Control-Allow-Methods'] = 'GET,POST'
-    return response
 
 
 
@@ -49,7 +44,7 @@ def logout():
 
 
 
-class Manager(db.Model):
+class Manager(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
@@ -171,8 +166,14 @@ def login_manager():
     if manager and manager.password == password:
         login_user(manager)
         return jsonify({"message": "Login successful!", "status": "success"}), 200
+        # response = make_response(jsonify({"message": "Login successful!", "status": "success"}))
+        # # response.headers['Access-Control-Allow-Origin'] = 'http://localhost:8080'
+        # return response, 200
     else:
         return jsonify({"message": "Invalid credentials", "status": "fail"}), 401
+        # # response = make_response(jsonify({"message": "Invalid credentials", "status": "fail"})), 401
+        # response.headers['Access-Control-Allow-Origin'] = 'http://localhost:8080'
+        # return response, 200
 
 @app.route('/login_user', methods=['GET', 'POST'])
 def login_user_person():
@@ -208,14 +209,16 @@ def login_admin():
 
 @app.route('/categories', methods=['GET'])
 def category():
-    if (current_user.is_authenticated):
+    print(current_user.is_authenticated)
+    print(current_user)
+    if (not current_user.is_authenticated):
         categories = Category.query.all()
         for category in categories:
             print(category)
             if category:
                 products_for_category = category.products
                 print(products_for_category)
-        return jsonify({"categories": categories, "manager": current_user})
+        return jsonify({"categories": categories, "manager": current_user.username})
     else:
         return jsonify({"categories": None, "manager": None})
     
