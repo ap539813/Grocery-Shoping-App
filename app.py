@@ -1,5 +1,7 @@
 from flask import Flask, request, jsonify, make_response
 from flask_sqlalchemy import SQLAlchemy
+
+from sqlalchemy import func
 from datetime import datetime
 import json
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
@@ -8,43 +10,56 @@ from flask_cors import CORS
 
 
 app = Flask(__name__)
-CORS(app, origins=["http://localhost:8080"], 
-     methods=["GET", "POST", "PUT"], 
-     allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Origin"], 
+
+CORS(app, 
+    #  , origins=["http://localhost:8080"], 
+    #  methods=["GET", "POST", "PUT"], 
+    #  allow_headers=["Content-Type", "Authorization", "Access-Control-Allow-Origin"], 
      supports_credentials=True)
+
 
 with open('config.json') as config_file:
     config_data = json.load(config_file)
 
 app.config['SECRET_KEY'] = config_data['SECRET_KEY']
 app.config['SQLALCHEMY_DATABASE_URI'] = config_data['SQLALCHEMY_DATABASE_URI']
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-login_manager = LoginManager()
-login_manager.init_app(app)
+
+
+
+# login_manager = LoginManager()
+# login_manager.init_app(app)
 # login_manager.login_view = 'login'
 
 admin_creds = {'username':'admin', 'password': 'password'}
 
 
 
+# Initialize login manager
+login_manager = LoginManager()
+login_manager.init_app(app)
+
+# User loader function
 @login_manager.user_loader
 def load_user(user_id):
-    if Manager.query.get(int(user_id)):
-        return Manager.query.get(int(user_id))
-    elif User.query.get(int(user_id)):
+    try:
+        print('#'*10 + '\nUser found\n' + '#'*10)
         return User.query.get(int(user_id))
-    return None
+    except:
+        print('#'*10 + '\nUser not found\n' + '#'*10)
+    # return None
 
-@app.route('/logout')
-@login_required
-def logout():
-    logout_user()
-    return redirect(url_for('login'))
+# @app.route('/logout')
+# @login_required
+# def logout():
+#     logout_user()
+#     return redirect(url_for('login'))
 
 
 
-class Manager(db.Model, UserMixin):
+class Manager(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
     password = db.Column(db.String(60), nullable=False)
@@ -59,6 +74,13 @@ class Category(db.Model):
     name = db.Column(db.String(50), nullable=False)
     products = db.relationship('Product', backref='category', lazy=True, cascade="all, delete")
 
+    def as_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'products': [product.as_dict() for product in self.products]
+        }
+
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(50), nullable=False)
@@ -67,6 +89,17 @@ class Product(db.Model):
     quantity = db.Column(db.Integer)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
     cart_items = db.relationship('CartItem', backref='product', lazy=True)
+    def as_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'unit': self.unit,
+            'rate': self.rate,
+            'quantity': self.quantity,
+            'category_id': self.category_id,
+            'cart_items': [cart_item.as_dict() for cart_item in self.cart_items],
+
+        }
 
 class CartItem(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -77,6 +110,18 @@ class CartItem(db.Model):
     unit = db.Column(db.String(20))
     quantity = db.Column(db.Integer, default=1)
     rate = db.Column(db.Float, nullable=False)
+
+    def as_dict(self):
+        return {
+            'id': self.id,
+            'user_id': self.user_id,
+            'product_id': self.product_id,
+            'category': self.category,
+            'product_name': self.product_name,
+            'unit': self.unit,
+            'quantity': self.quantity,
+            'rate': self.rate
+        }
 
 class Ledger(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -143,7 +188,9 @@ def approve_request(request_id):
 
     if request_to_approve.category == "manager":
         new_manager = Manager(username=request_to_approve.username, password=request_to_approve.password)
+        new_manager_user = User(username=request_to_approve.username, password=request_to_approve.password)
         db.session.add(new_manager)
+        db.session.add(new_manager_user)
         
         db.session.delete(request_to_approve)
         
@@ -155,43 +202,48 @@ def approve_request(request_id):
     return jsonify({"message": "Request type not handled", "status": "fail"}), 400
 
 
-@app.route('/login-manager', methods=['POST'])
+@app.route('/login-manager', methods=['GET', 'POST'])
 def login_manager():
     data = request.json
     username = data['username']
     password = data['password']
+
+    print(type(username), type(password))
+
+    if (current_user.is_authenticated):
+        return jsonify({"message": "Already logged in!!", "status": "fail"}), 401
     
-    manager = Manager.query.filter_by(username=username).first()
+    # manager = Manager.query.filter_by(username=username).first()
+    manager = User.query.filter_by(username=username).first()
+    print(manager.username, manager.password)
     
     if manager and manager.password == password:
-        login_user(manager)
+        login_user(manager, remember=True)
         return jsonify({"message": "Login successful!", "status": "success"}), 200
-        # response = make_response(jsonify({"message": "Login successful!", "status": "success"}))
-        # # response.headers['Access-Control-Allow-Origin'] = 'http://localhost:8080'
-        # return response, 200
     else:
         return jsonify({"message": "Invalid credentials", "status": "fail"}), 401
-        # # response = make_response(jsonify({"message": "Invalid credentials", "status": "fail"})), 401
-        # response.headers['Access-Control-Allow-Origin'] = 'http://localhost:8080'
-        # return response, 200
 
-@app.route('/login_user', methods=['GET', 'POST'])
-def login_user_person():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
-        user = User.query.filter_by(username=username).first()
-        manager = Manager.query.filter_by(username=username).first()
 
-        if user and user.password == password:
-            login_user(user)
-            return redirect(url_for("some_protected_route"))
-        elif manager and manager.password == password:
-            login_user(manager)
-            return redirect(url_for("some_protected_route"))
-        else:
-            flash("Login unsuccessful. Check username and password.", "danger")
-    return render_template("login.html")
+@app.route('/login_user', methods=['POST'])
+def login():
+    data = request.json
+    username = data['username']
+    password = data['password']
+
+    print(type(username), type(password))
+
+    if (current_user.is_authenticated):
+        return jsonify({"message": "Already logged in!!", "status": "fail"}), 401
+    
+    # manager = Manager.query.filter_by(username=username).first()
+    manager = User.query.filter_by(username=username).first()
+    print(manager.username, manager.password)
+    
+    if manager and manager.password == password:
+        login_user(manager, remember=True)
+        return jsonify({"message": "Login successful!", "status": "success"}), 200
+    else:
+        return jsonify({"message": "Invalid credentials", "status": "fail"}), 401
 
 
 @app.route('/login_admin', methods=['POST'])
@@ -206,20 +258,20 @@ def login_admin():
         return jsonify({"message": "Login failed. Invalid credentials.", "status": "fail"}), 401
 
 
-
 @app.route('/categories', methods=['GET'])
 def category():
-    print(current_user.is_authenticated)
-    print(current_user)
-    if (not current_user.is_authenticated):
+    # print(current_user.__dir__())
+    if True:#(current_user.is_authenticated):
         categories = Category.query.all()
-        for category in categories:
-            print(category)
+        categories_list = [category.as_dict() for category in categories if category]
+        for category in categories:            
             if category:
                 products_for_category = category.products
                 print(products_for_category)
-        return jsonify({"categories": categories, "manager": current_user.username})
+        return jsonify({"categories": categories_list, "manager": 'manager'})
     else:
+        logout_user()
+        print(current_user)
         return jsonify({"categories": None, "manager": None})
     
 @app.route('/save_category', methods=['POST'])
@@ -237,6 +289,38 @@ def save_category():
         db.session.add(new_category)
         db.session.commit()
         return jsonify({'status': 'success', 'message': 'Category saved successfully'})
+    except Exception as e:
+        print(e)
+        return jsonify({'status': 'error', 'message': 'An error occurred: ' + str(e)}), 500
+    
+@app.route('/save_product', methods=['POST'])
+def save_product():
+    data = request.json
+    category_id = data['category_id']
+    product_name = data['product_name']
+    unit = data['unit']
+    rate = float(data['rate'])
+    quantity = int(data['quantity'])
+
+    print(data)
+    category = Category.query.get(category_id)
+    print(category)
+    
+    if not product_name:
+        return jsonify({'status': 'error', 'message': 'Product name is required'}), 400
+    
+    new_product = Product(
+        category = category,
+        name=product_name,
+        unit=unit,
+        rate=rate,
+        quantity=quantity
+    )
+    
+    try:
+        db.session.add(new_product)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Product saved successfully'})
     except Exception as e:
         print(e)
         return jsonify({'status': 'error', 'message': 'An error occurred: ' + str(e)}), 500
