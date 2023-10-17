@@ -35,6 +35,7 @@ export default {
 
               let data = await response.json();
               alert(data.message);
+
               
               this.username = '';
               this.password = '';
