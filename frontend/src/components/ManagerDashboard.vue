@@ -30,11 +30,11 @@
           </div>
       </div>
 
-      <div id="add-product-overlay">
+      <div v-if="isCreateProductVisible" id="add-product-overlay">
         <div id="add-product-popup">
         <h3>Add Product</h3>
         <form id="add-product-form">
-            <input type="hidden" id="category-id-hidden" name="category_name">
+            <input type="hidden" v-model="categoryId" id="category-id-hidden" name="category_name">
             <input type="text" id="product-name-input" name="product_name" placeholder="Product Name" required>
             <input type="text" id="unit-input" name="unit" placeholder="Unit" required>
             <input type="number" id="rate-input" name="rate" placeholder="Rate" required>
@@ -44,7 +44,7 @@
     </div>
     </div>
 
-    <div id="edit-product-overlay">
+    <div v-if="isEditProductVisible" id="edit-product-overlay">
         <div id="edit-product-popup">
         <h3>Edit Product</h3>
         <form id="edit-product-form">
@@ -89,10 +89,20 @@ export default {
           isCreateCategoryVisible: false,   // Visibility toggle for create category overlay
           isEditCategoryVisible: false,     // Visibility toggle for edit category overlay
           newCategoryName: '',
+          isCreateProductVisible: false,
+          isEditProductVisible: false,
           editingCategory: {                // Object to store the editing category details
               id: null,
               name: ''
           },
+          categoryId: null,
+          product: {
+            category_id: '',
+            product_name: '',
+            unit: '',
+            rate: '',
+            quantity: ''
+        }
       };
   },
   methods: {
@@ -124,6 +134,13 @@ export default {
     hideEditCategoryPopup() {
         this.isEditCategoryVisible = false;
     },
+    showAddProductPopup(categoryId) {
+        this.categoryId = categoryId;
+        this.isCreateProductVisible = true;
+      },
+      hideAddProductPopup() {
+         this.isCreateProductVisible = false;
+      },
     async saveCategory() {
         try {
             const response = await fetch('http://127.0.0.1:5000/save_category', {
@@ -149,6 +166,35 @@ export default {
         }
         this.hideCreateCategoryPopup();
     },
+      saveProduct() {
+            this.product.category_id = document.getElementById("category-id-hidden").value;
+            this.product.product_name = document.getElementById("product-name-input").value;
+            this.product.unit = document.getElementById("unit-input").value;
+            this.product.rate = parseFloat(document.getElementById("rate-input").value);
+            this.product.quantity = parseInt(document.getElementById("quantity-input").value);
+            
+            fetch('http://127.0.0.1:5000/save_product', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(this.product)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Product saved successfully!');
+                    window.location.reload();
+                    
+                } else {
+                    alert('Error saving product!');
+                }
+            })
+            .catch(error => {
+                console.error("There was an error saving the product:", error);
+            });
+            this.hideAddProductPopup();
+        },
 
       navigateToSummary() {
           // Logic to navigate to summary
@@ -157,20 +203,18 @@ export default {
           // Logic to log out
       },
       showEditProductPopup() {
-          // Logic to show product edit modal
+          this.isEditProductVisible = true;
+      },
+      hideEditProductPopup() {
+          this.isEditProductVisible = true;
       },
       deleteProduct() {
           // Logic to delete product
       },
-      showAddProductPopup() {
-          // Logic to show product add modal
-      },
-
       deleteCategory() {
           // Logic to delete category
       },
-      // ... other necessary methods
-  },
+    },
   mounted() {
       this.fetchUserAndCategories();
     }
@@ -244,7 +288,6 @@ export default {
         }
 
         #add-product-overlay{
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
