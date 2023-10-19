@@ -39,6 +39,7 @@
             <input type="text" id="unit-input" name="unit" placeholder="Unit" required>
             <input type="number" id="rate-input" name="rate" placeholder="Rate" required>
             <input type="number" id="quantity-input" name="quantity" placeholder="Quantity" required>
+            <input type="date" id="mfd-input" name="mfd" placeholder="Manufacturing Date" required>
             <button type="button" @click="saveProduct()">Save</button>
         </form>
     </div>
@@ -53,6 +54,7 @@
             <input type="text" v-model="productUnit" id="edit-unit-input" name="unit" placeholder="Unit" required>
             <input type="number" v-model="productRate" id="edit-rate-input" name="rate" placeholder="Rate" required>
             <input type="number" v-model="productQuantity" id="edit-quantity-input" name="quantity" placeholder="Quantity" required>
+            <input type="date" v-model="productDate" id="edit-mfd-input" name="mfd" placeholder="Manufacturing Date" required>
             <button type="button" @click="editProduct()">Save</button>
         </form>
     </div>
@@ -102,13 +104,15 @@ export default {
             product_name: '',
             unit: '',
             rate: '',
-            quantity: ''
+            quantity: '',
+            mfd: ''
         },
         productId: '',
         productName: '',
         productUnit: '',
         productRate: '',
-        productQuantity: ''
+        productQuantity: '',
+        productDate: ''
       };
   },
   methods: {
@@ -178,6 +182,7 @@ export default {
             this.product.unit = document.getElementById("unit-input").value;
             this.product.rate = parseFloat(document.getElementById("rate-input").value);
             this.product.quantity = parseInt(document.getElementById("quantity-input").value);
+            this.product.mfd = document.getElementById("mfd-input").value;
             
             fetch('http://127.0.0.1:5000/save_product', {
                 method: 'POST',
@@ -234,6 +239,7 @@ export default {
             this.product.unit = document.getElementById("edit-unit-input").value;
             this.product.rate = parseFloat(document.getElementById("edit-rate-input").value);
             this.product.quantity = parseInt(document.getElementById("edit-quantity-input").value);
+            this.product.mfd = document.getElementById("edit-mfd-input").value;
             
             fetch('http://127.0.0.1:5000/edit_product', {
                 method: 'POST',
@@ -258,19 +264,17 @@ export default {
             this.hideEditProductPopup();
         },
 
-      navigateToSummary() {
-          // Logic to navigate to summary
-      },
       logout() {
-          // Logic to log out
+        this.$router.push({ name: 'Home' });
       },
-      showEditProductPopup(productId, productName, productUnit, productRate, productQuantity) {
+      showEditProductPopup(productId, productName, productUnit, productRate, productQuantity, productDate) {
           this.isEditProductVisible = true;
           this.productId = productId;
           this.productName = productName;
           this.productUnit = productUnit;
           this.productRate = productRate;
           this.productQuantity = productQuantity;
+          this.productDate = productDate;
       },
       hideEditProductPopup() {
           this.isEditProductVisible = true;
@@ -299,8 +303,29 @@ export default {
                 console.error("There was an error deleting the product:", error);
             });
       },
-      deleteCategory() {
-          // Logic to delete category
+      deleteCategory(categoryId) {
+        fetch('http://127.0.0.1:5000/delete_category', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                        'category_id': categoryId
+                    })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Category deleted successfully!');
+                    window.location.reload();
+                    
+                } else {
+                    alert('Error deleting category!');
+                }
+            })
+            .catch(error => {
+                console.error("There was an error deleting the category:", error);
+            });
       },
     },
   mounted() {
