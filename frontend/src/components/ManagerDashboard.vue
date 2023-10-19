@@ -18,7 +18,7 @@
               <div class="products-container">
                   <div v-for="product in category.products" :key="product.id" class="product-div" :id="'product-' + product.id">
                       <span>{{ product.name }}</span>
-                      <button @click="showEditProductPopup(product)">Edit</button>
+                      <button @click="showEditProductPopup(product.id, product.name, product.unit, product.rate, product.quantity)">Edit</button>
                       <button @click="deleteProduct(product.id)">Delete</button>
                   </div>
               </div>
@@ -48,11 +48,11 @@
         <div id="edit-product-popup">
         <h3>Edit Product</h3>
         <form id="edit-product-form">
-            <input type = "hidden" id = "edit-quantity-input-hidden" name="product_id">
-            <input type="text" id="edit-product-name-input" name="product_name" placeholder="Product Name" required>
-            <input type="text" id="edit-unit-input" name="unit" placeholder="Unit" required>
-            <input type="number" id="edit-rate-input" name="rate" placeholder="Rate" required>
-            <input type="number" id="edit-quantity-input" name="quantity" placeholder="Quantity" required>
+            <input type = "hidden" v-model="productId" id = "edit-product-id-hidden" name="product_id">
+            <input type="text" v-model="productName" id="edit-product-name-input" name="product_name" placeholder="Product Name" required>
+            <input type="text" v-model="productUnit" id="edit-unit-input" name="unit" placeholder="Unit" required>
+            <input type="number" v-model="productRate" id="edit-rate-input" name="rate" placeholder="Rate" required>
+            <input type="number" v-model="productQuantity" id="edit-quantity-input" name="quantity" placeholder="Quantity" required>
             <button type="button" @click="editProduct()">Save</button>
         </form>
     </div>
@@ -97,12 +97,18 @@ export default {
           },
           categoryId: null,
           product: {
+            product_id: '',
             category_id: '',
             product_name: '',
             unit: '',
             rate: '',
             quantity: ''
-        }
+        },
+        productId: '',
+        productName: '',
+        productUnit: '',
+        productRate: '',
+        productQuantity: ''
       };
   },
   methods: {
@@ -222,6 +228,35 @@ export default {
             });
             this.hideAddProductPopup();
         },
+        editProduct() {
+            this.product.product_id = document.getElementById("edit-product-id-hidden").value;
+            this.product.product_name = document.getElementById("edit-product-name-input").value;
+            this.product.unit = document.getElementById("edit-unit-input").value;
+            this.product.rate = parseFloat(document.getElementById("edit-rate-input").value);
+            this.product.quantity = parseInt(document.getElementById("edit-quantity-input").value);
+            
+            fetch('http://127.0.0.1:5000/edit_product', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(this.product)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Product updated successfully!');
+                    window.location.reload();
+                    
+                } else {
+                    alert('Error updating product!');
+                }
+            })
+            .catch(error => {
+                console.error("There was an error updating the product:", error);
+            });
+            this.hideEditProductPopup();
+        },
 
       navigateToSummary() {
           // Logic to navigate to summary
@@ -229,14 +264,40 @@ export default {
       logout() {
           // Logic to log out
       },
-      showEditProductPopup() {
+      showEditProductPopup(productId, productName, productUnit, productRate, productQuantity) {
           this.isEditProductVisible = true;
+          this.productId = productId;
+          this.productName = productName;
+          this.productUnit = productUnit;
+          this.productRate = productRate;
+          this.productQuantity = productQuantity;
       },
       hideEditProductPopup() {
           this.isEditProductVisible = true;
       },
-      deleteProduct() {
-          // Logic to delete product
+      deleteProduct(productId) {
+        fetch('http://127.0.0.1:5000/delete_product', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                        'product_id': productId
+                    })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Product deleted successfully!');
+                    window.location.reload();
+                    
+                } else {
+                    alert('Error deleting product!');
+                }
+            })
+            .catch(error => {
+                console.error("There was an error deleting the product:", error);
+            });
       },
       deleteCategory() {
           // Logic to delete category
@@ -325,7 +386,6 @@ export default {
         }
 
         #edit-product-overlay{
-            display: none;
             position: fixed;
             top: 0;
             left: 0;
