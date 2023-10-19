@@ -187,6 +187,33 @@
             });
             this.hideAddProductPopup();
         },
+        logout() {
+        this.$router.push({ name: 'Home' });
+      },
+      deleteCategory(categoryId) {
+        fetch('http://127.0.0.1:5000/delete_category', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                        'category_id': categoryId
+                    })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Category deleted successfully!');
+                    window.location.reload();
+                    
+                } else {
+                    alert('Error deleting category!');
+                }
+            })
+            .catch(error => {
+                console.error("There was an error deleting the category:", error);
+            });
+      },
 
     },
     mounted() {
