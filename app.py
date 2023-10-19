@@ -306,6 +306,31 @@ def save_category():
         print(e)
         return jsonify({'status': 'error', 'message': 'An error occurred: ' + str(e)}), 500
     
+@app.route('/delete_category', methods=['POST'])
+def delete_category():
+    data = request.json
+    try:
+        # Fetching the category from the database using the category_id
+        print(data)
+        category = Category.query.get(data['category_id'])
+        
+        # Checking if the category exists
+        if not category:
+            return jsonify({'status': 'error', "message": "Category not found!"}), 404
+        
+        # Deleting the category from the database
+        db.session.delete(category)
+        
+        # Committing the changes to the database
+        db.session.commit()
+        
+        return jsonify({'status': 'success', "message": "Category deleted successfully!"})
+    except Exception as e:
+        # Handling any exceptions that occur
+        print(e)
+        return jsonify({'status': 'error', "message": "An error occurred while deleting the category: " + str(e)}), 500
+    
+
 @app.route('/update_category', methods=['POST'])
 def update_category():
     data = request.json
@@ -360,7 +385,59 @@ def save_product():
         print(e)
         return jsonify({'status': 'error', 'message': 'An error occurred: ' + str(e)}), 500
 
+@app.route('/edit_product', methods=['POST'])
+def edit_product():
+    data = request.get_json()
+    product_id = data['product_id']
+    product_name = data['product_name']
+    unit = data['unit']
+    rate = float(data['rate'])
+    quantity = int(data['quantity'])
 
+    # Find the product by its ID
+    product = Product.query.get(product_id)
+
+    if not product:
+        return jsonify({'status': 'error', "message": "Product not found!"}), 404
+
+    # Update the product's name
+    product.name = product_name
+    product.unit = unit
+    product.rate = rate
+    product.quantity = quantity
+    
+    # Commit the changes to the database
+    try:
+        db.session.commit()
+        return jsonify({'status': 'success', "message": "Product successfully edited!"}), 200
+    except Exception as e:
+        # Handle the exception and rollback in case of any errors
+        db.session.rollback()
+        return jsonify({'status': 'error', "message": "An error occurred: " + str(e)}), 500
+
+@app.route('/delete_product', methods=['POST'])
+def delete_product():
+    data = request.get_json()
+    print(data)
+    product_id = data['product_id']
+
+    # Find the product by its ID
+    product = Product.query.get(int(product_id))
+
+    if not product:
+        return jsonify({'status': 'error', "message": "Product not found!"}), 404
+    
+    # Commit the changes to the database
+    try:
+        # Deleting the product from the database
+        db.session.delete(product)
+        db.session.commit()
+        return jsonify({'status': 'success', "message": "Product successfully deleted!"}), 200
+    except Exception as e:
+        # Handle the exception and rollback in case of any errors
+        db.session.rollback()
+        return jsonify({'status': 'error', "message": "An error occurred: " + str(e)}), 500
+    
 @app.route('/add_category_', methods = ['POST'])
 def save_category_request():
     pass
