@@ -25,7 +25,7 @@
 
               <button class="add-btn" @click="showAddProductPopup(category.id)">+</button>
               <br><br>
-              <button class="edit-btn" @click="showEditCategoryPopup(category)">Edit</button>
+              <button class="edit-btn" @click="showEditCategoryPopup(category.id)">Edit</button>
               <button class="delete-btn" @click="deleteCategory(category.id)">Delete</button>
           </div>
       </div>
@@ -71,8 +71,8 @@
     <!-- Edit Category Modal -->
     <div v-if="isEditCategoryVisible" id="edit-category-overlay">
         <div id="edit-category-popup">
-            <input type="hidden" v-model="editingCategory.id">
-            <input type="text" v-model="editingCategory.name" placeholder="Edit category name">
+            <input type="hidden" v-model="categoryId" id="editing-category-id-hidden" name="category_name">
+            <input type="text" id = "new-category-name" placeholder="Edit category name">
             <button id="updateBtn" @click="updateCategory">Update</button>
         </div>
     </div>
@@ -84,14 +84,14 @@
 export default {
   data() {
       return {
-          managerUsername: '', // This would be fetched or passed down as a prop
-          categories: [],      // This would be fetched from the server
-          isCreateCategoryVisible: false,   // Visibility toggle for create category overlay
-          isEditCategoryVisible: false,     // Visibility toggle for edit category overlay
+          managerUsername: '',
+          categories: [],
+          isCreateCategoryVisible: false,
+          isEditCategoryVisible: false,
           newCategoryName: '',
           isCreateProductVisible: false,
           isEditProductVisible: false,
-          editingCategory: {                // Object to store the editing category details
+          editingCategory: {
               id: null,
               name: ''
           },
@@ -108,6 +108,7 @@ export default {
   methods: {
     async fetchUserAndCategories(){
       try {
+            
             let response = await fetch("http://127.0.0.1:5000/categories", {
                 method: 'GET',
                 credentials: 'include'
@@ -126,9 +127,8 @@ export default {
     hideCreateCategoryPopup() {
         this.isCreateCategoryVisible = false;
     },
-    showEditCategoryPopup(categoryId, categoryName) {
-        this.editingCategory.id = categoryId;
-        this.editingCategory.name = categoryName;
+    showEditCategoryPopup(categoryId) {
+        this.categoryId = categoryId;
         this.isEditCategoryVisible = true;
     },
     hideEditCategoryPopup() {
@@ -141,31 +141,31 @@ export default {
       hideAddProductPopup() {
          this.isCreateProductVisible = false;
       },
-    async saveCategory() {
-        try {
-            const response = await fetch('http://127.0.0.1:5000/save_category', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json;charset=UTF-8'
-                },
-                body: JSON.stringify({
-                    'category_name': this.newCategoryName
-                })
-            });
-            
-            const data = await response.json();
-            
-            if (data.status === "success") {
-                alert(data.message);
-                window.location.reload();
-            } else {
-              console.error("Error saving category:", data.message);
+        async saveCategory() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/save_category', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                    body: JSON.stringify({
+                        'category_name': this.newCategoryName
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                console.error("Error saving category:", data.message);
+                }
+            } catch (error) {
+            console.error("Error saving category:", error);
             }
-        } catch (error) {
-          console.error("Error saving category:", error);
-        }
-        this.hideCreateCategoryPopup();
-    },
+            this.hideCreateCategoryPopup();
+        },
       saveProduct() {
             this.product.category_id = document.getElementById("category-id-hidden").value;
             this.product.product_name = document.getElementById("product-name-input").value;
@@ -179,6 +179,33 @@ export default {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(this.product)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if(data.status === 'success') {
+                    alert('Product saved successfully!');
+                    window.location.reload();
+                    
+                } else {
+                    alert('Error saving product!');
+                }
+            })
+            .catch(error => {
+                console.error("There was an error saving the product:", error);
+            });
+            this.hideAddProductPopup();
+        },
+
+        updateCategory() {
+            this.editingCategory.id = document.getElementById("editing-category-id-hidden").value;
+            this.editingCategory.name = document.getElementById("new-category-name").value;
+            console.log(JSON.stringify(this.editingCategory))
+            fetch('http://127.0.0.1:5000/update_category', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(this.editingCategory)
             })
             .then(response => response.json())
             .then(data => {
