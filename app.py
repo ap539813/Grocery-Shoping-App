@@ -88,7 +88,9 @@ class Product(db.Model):
     rate = db.Column(db.Float)
     quantity = db.Column(db.Integer)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=False)
+    manufacturing_date = db.Column(db.DateTime, nullable=False)
     cart_items = db.relationship('CartItem', backref='product', lazy=True)
+    
     def as_dict(self):
         return {
             'id': self.id,
@@ -97,6 +99,7 @@ class Product(db.Model):
             'rate': self.rate,
             'quantity': self.quantity,
             'category_id': self.category_id,
+            'manufacturing_date': self.manufacturing_date,
             'cart_items': [cart_item.as_dict() for cart_item in self.cart_items],
 
         }
@@ -361,6 +364,7 @@ def save_product():
     unit = data['unit']
     rate = float(data['rate'])
     quantity = int(data['quantity'])
+    mfd = datetime.strptime(data['mfd'], '%Y-%m-%d')
 
     print(data)
     category = Category.query.get(category_id)
@@ -374,7 +378,8 @@ def save_product():
         name=product_name,
         unit=unit,
         rate=rate,
-        quantity=quantity
+        quantity=quantity,
+        manufacturing_date=mfd
     )
     
     try:
@@ -393,6 +398,7 @@ def edit_product():
     unit = data['unit']
     rate = float(data['rate'])
     quantity = int(data['quantity'])
+    mfd = datetime.strptime(data['mfd'], '%Y-%m-%d')
 
     # Find the product by its ID
     product = Product.query.get(product_id)
@@ -405,6 +411,7 @@ def edit_product():
     product.unit = unit
     product.rate = rate
     product.quantity = quantity
+    product.manufacturing_date = mfd
     
     # Commit the changes to the database
     try:
