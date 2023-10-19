@@ -176,6 +176,19 @@ def register():
 @app.route('/pending-requests', methods=['GET'])
 def get_pending_requests():
     pending_requests = ApprovalRequest.query.all()
+
+    if True:#(current_user.is_authenticated):
+        categories = Category.query.all()
+        categories_list = [category.as_dict() for category in categories if category]
+        for category in categories:            
+            if category:
+                products_for_category = category.products
+                print(products_for_category)
+        return jsonify({"categories": categories_list, "admin": 'Admin', "requests": [{"id": r.id, "username": r.username, "category": r.category} for r in pending_requests]})
+    else:
+        logout_user()
+        print(current_user)
+        return jsonify({"categories": None, "manager": None})
     return jsonify({"requests": [{"id": r.id, "username": r.username, "category": r.category} for r in pending_requests]})
 
 
@@ -293,6 +306,28 @@ def save_category():
         print(e)
         return jsonify({'status': 'error', 'message': 'An error occurred: ' + str(e)}), 500
     
+@app.route('/update_category', methods=['POST'])
+def update_category():
+    data = request.json
+    try:
+        # Fetching the category from the database using the category_id
+        category = Category.query.get(data['id'])
+        
+        # Checking if the category exists
+        if not category:
+            return jsonify({'status': 'error', 'message': 'Category not found'}), 404
+        
+        # Updating the category name
+        category.name = data['name']
+        
+        # Committing the changes to the database
+        db.session.commit()
+        
+        return jsonify({'status': 'success', 'message': 'Category updated successfully!'})
+    except Exception as e:
+        # Handling any exceptions that occur
+        return jsonify({'status': 'error', 'message': 'An error occurred: ' + str(e)}), 500
+    
 @app.route('/save_product', methods=['POST'])
 def save_product():
     data = request.json
@@ -325,6 +360,10 @@ def save_product():
         print(e)
         return jsonify({'status': 'error', 'message': 'An error occurred: ' + str(e)}), 500
 
+
+@app.route('/add_category_', methods = ['POST'])
+def save_category_request():
+    pass
 if __name__ == "__main__":
     app.run(debug=True, host='localhost', port=5000)
 
