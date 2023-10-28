@@ -116,21 +116,63 @@ export default {
       };
   },
   methods: {
+    // async fetchUserAndCategories(){
+    //   try {
+    //         let response = await fetch("http://127.0.0.1:5000/categories", {
+    //             method: 'GET',
+    //             credentials: 'include'
+    //         });
+    //         let data = await response.json();
+    //         console.log(data)
+    //         this.categories = data.categories;
+    //         this.managerUsername = data.manager;
+    //     } catch (error) {
+    //         console.error("Error fetching pending requests:", error);
+    //     }
+    // },
+
+    // async fetchUserAndCategories(){
+    // try {
+    //         let response = await fetch(`http://127.0.0.1:5000/categories?username=${this.$route.query.username}`, {
+    //             method: 'GET',
+    //             credentials: 'include'
+    //         });
+    //         let data = await response.json();
+    //         console.log(data)
+    //         this.categories = data.categories;
+    //         this.managerUsername = data.manager;
+    //     } catch (error) {
+    //         console.error("Error fetching pending requests:", error);
+    //     }
+    // },
+
     async fetchUserAndCategories(){
-      try {
-            
-            let response = await fetch("http://127.0.0.1:5000/categories", {
+        try {
+            let response = await fetch(`http://127.0.0.1:5000/categories?username=${this.$route.query.username}`, {
                 method: 'GET',
                 credentials: 'include'
             });
+            
+            if (response.status === 401 || response.status === 401) { // If unauthorized
+                this.$router.push({ name: 'ManagerLoginPage' });
+                return;
+            }
+
             let data = await response.json();
             console.log(data)
-            this.categories = data.categories;
-            this.managerUsername = data.manager;
+            
+            if (data.categories && data.manager) { // Added check to make sure data is present
+                this.categories = data.categories;
+                this.managerUsername = data.manager;
+            } else {
+                console.error("Unexpected response data:", data);
+            }
+
         } catch (error) {
             console.error("Error fetching pending requests:", error);
         }
     },
+
     showCreateCategoryPopup() {
         this.isCreateCategoryVisible = true;
     },
@@ -153,13 +195,14 @@ export default {
       },
         async saveCategory() {
             try {
-                const response = await fetch('http://127.0.0.1:5000/save_category', {
+                const response = await fetch('http://127.0.0.1:5000/create_category_request', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json;charset=UTF-8'
                     },
                     body: JSON.stringify({
-                        'category_name': this.newCategoryName
+                        'category': this.newCategoryName,
+                        'username': this.managerUsername
                     })
                 });
                 
@@ -264,8 +307,14 @@ export default {
             this.hideEditProductPopup();
         },
 
-      logout() {
-        this.$router.push({ name: 'Home' });
+      async logout() {
+        // this.$router.push({ name: 'Home' });
+        await fetch(`http://127.0.0.1:5000/logout?username=${this.$route.query.username}`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+            this.$router.push({ name: 'Home' });
+            return;
       },
       showEditProductPopup(productId, productName, productUnit, productRate, productQuantity, productDate) {
           this.isEditProductVisible = true;
