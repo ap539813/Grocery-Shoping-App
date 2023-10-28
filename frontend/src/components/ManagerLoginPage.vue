@@ -34,7 +34,8 @@
           
           if (data.status === 'success') {
             alert('Manager login successful!');
-            this.$router.push({ name: 'ManagerDashboard' });
+            // this.$router.push({ name: 'ManagerDashboard' });
+            this.$router.push({ name: 'ManagerDashboard', query: { username: this.username } });
           } else {
             alert('Login failed!');
           }
