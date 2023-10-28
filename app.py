@@ -57,7 +57,7 @@ def logout():
     current_user = User.query.filter_by(username=username).first()
     if (current_user.is_authenticated):
         current_user.is_authenticated = False
-        db.session.commit
+        db.session.commit()
     return jsonify({"message": "Logout successful!", "status": "success"}), 200
 
 
