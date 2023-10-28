@@ -153,9 +153,8 @@ export default {
                 credentials: 'include'
             });
             
-            if (response.status === 401 || response.status === 401) { // If unauthorized
-                this.$router.push({ name: 'ManagerLoginPage' });
-                return;
+            if (response.status === 401 || response.status === 404) { // If unauthorized
+                this.$router.push({ name: 'ManagerLoginPage' })
             }
 
             let data = await response.json();
