@@ -294,6 +294,7 @@ def category():
                     products_for_category = category.products
             return jsonify({"categories": categories_list, "manager": username}), 200
         else:
+            print(current_user.is_authenticated)
             return jsonify({"message": "Login failed. Invalid user.", "status": "fail"}), 401
     else:
         return jsonify({"message": "Invalid manager", "status": "fail"}), 404
