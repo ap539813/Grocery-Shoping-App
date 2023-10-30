@@ -152,9 +152,9 @@ export default {
                 method: 'GET',
                 credentials: 'include'
             });
-            
+            console.log(response.status);
             if (response.status === 401 || response.status === 404) { // If unauthorized
-                this.$router.push({ name: 'ManagerLoginPage' })
+                this.$router.push({ name: 'LoginManager' })
             }
 
             let data = await response.json();
