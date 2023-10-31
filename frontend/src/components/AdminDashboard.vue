@@ -85,7 +85,14 @@
     methods: {
       async fetchPendingRequests() {
         try {
-            let response = await fetch("http://127.0.0.1:5000/pending-requests");
+            let response = await fetch(`http://127.0.0.1:5000/pending-requests?username=${this.$route.query.username}`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+            console.log(response.status);
+            if (response.status === 401 || response.status === 404) {
+                this.$router.push({ name: 'LoginAdmin' })
+            }
             let data = await response.json();
             this.requests = data.requests;
             this.categories = data.categories;
@@ -102,6 +109,7 @@
           let data = await response.json();
           if (data.status === "success") {
             this.requests = this.requests.filter(request => request.id !== requestId);
+            window.location.reload();
           } else {
             console.error("Error approving request:", data.message);
           }
@@ -187,8 +195,13 @@
             });
             this.hideAddProductPopup();
         },
-        logout() {
-        this.$router.push({ name: 'Home' });
+        async logout() {
+        await fetch(`http://127.0.0.1:5000/logout?username=${this.$route.query.username}`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+            this.$router.push({ name: 'Home' });
+            return;
       },
       deleteCategory(categoryId) {
         fetch('http://127.0.0.1:5000/delete_category', {
