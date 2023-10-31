@@ -153,7 +153,7 @@ export default {
                 credentials: 'include'
             });
             console.log(response.status);
-            if (response.status === 401 || response.status === 404) { // If unauthorized
+            if (response.status === 401 || response.status === 404) {
                 this.$router.push({ name: 'LoginManager' })
             }
 
