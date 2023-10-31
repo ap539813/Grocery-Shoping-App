@@ -33,7 +33,8 @@ export default {
 
               if (response.status === 200) {
                   console.log('Login successful:', data.message);
-                  this.$router.push({ name: 'AdminDashboard' });
+                  this.$router.push({ name: 'AdminDashboard', query: { username: this.username }} );
+                  
               } else {
                   console.log('Login failed:', data.message);
                   alert(data.message);
