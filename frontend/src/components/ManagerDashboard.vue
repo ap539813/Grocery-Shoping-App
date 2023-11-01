@@ -253,21 +253,25 @@ export default {
             this.editingCategory.id = document.getElementById("editing-category-id-hidden").value;
             this.editingCategory.name = document.getElementById("new-category-name").value;
             console.log(JSON.stringify(this.editingCategory))
-            fetch('http://127.0.0.1:5000/update_category', {
+            fetch('http://127.0.0.1:5000/edit_category_request', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify(this.editingCategory)
+                body: JSON.stringify({
+                        'category': this.editingCategory.name,
+                        'username': this.managerUsername,
+                        'category_id': this.editingCategory.id
+                    })
             })
             .then(response => response.json())
             .then(data => {
                 if(data.status === 'success') {
-                    alert('Product saved successfully!');
+                    alert(data.message);
                     window.location.reload();
                     
                 } else {
-                    alert('Error saving product!');
+                    alert(data.message);
                 }
             })
             .catch(error => {
