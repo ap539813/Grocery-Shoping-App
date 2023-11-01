@@ -356,23 +356,24 @@ export default {
             });
       },
       deleteCategory(categoryId) {
-        fetch('http://127.0.0.1:5000/delete_category', {
+        fetch('http://127.0.0.1:5000/delete_category_request', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
-                        'category_id': categoryId
+                        'category_id': categoryId,
+                        'username': this.managerUsername
                     })
             })
             .then(response => response.json())
             .then(data => {
                 if(data.status === 'success') {
-                    alert('Category deleted successfully!');
+                    alert(data.message);
                     window.location.reload();
                     
                 } else {
-                    alert('Error deleting category!');
+                    alert(data.message);
                 }
             })
             .catch(error => {
