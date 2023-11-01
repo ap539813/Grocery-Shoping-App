@@ -226,7 +226,7 @@ def delete_category_request():
         approval_request = ApprovalRequest(username=username, action="delete_category", category_id = category_id)
         db.session.add(approval_request)
         db.session.commit()
-        return jsonify({"status": "success", "message": "Category sent for approval to the admin!"}), 200
+        return jsonify({"status": "success", "message": "Delete category sent for approval to the admin!"}), 200
     else:
         return jsonify({"status": "fail", "message": "Manaer not valid!"}), 200
 
@@ -316,6 +316,9 @@ def approve_request(request_id):
             return jsonify({'status': 'error', 'message': 'An error occurred: ' + str(e)}), 500
     if request_to_approve.action == "delete_category":
         category_id = request_to_approve.category_id
+
+        if not category_id:
+            return jsonify({'status': 'fail', 'message': 'Category ID is required'}), 400
         try:
             # Fetching the category from the database using the category_id
             category = Category.query.get(category_id)
