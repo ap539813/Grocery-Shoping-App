@@ -37,7 +37,7 @@
         <div id="categories-container">
             <div v-for="category in categories" :key="category.id" class="category-div" :id="category.id">
                 <h2>{{ category.name }}</h2>
-                <button class="edit-btn" @click="showEditCategoryPopup(category)">Edit</button>
+                <button class="edit-btn" @click="showEditCategoryPopup(category.id)">Edit</button>
                 <button class="delete-btn" @click="deleteCategory(category.id)">Delete</button>
             </div>
         </div>
@@ -80,6 +80,7 @@
               id: null,
               name: ''
           },
+          categoryId: null,
       };
     },
     methods: {
@@ -183,17 +184,18 @@
             .then(response => response.json())
             .then(data => {
                 if(data.status === 'success') {
-                    alert('Product saved successfully!');
+                    alert(data.message);
                     window.location.reload();
                     
                 } else {
-                    alert('Error saving product!');
+                    alert(data.message);
+                    console.log(this.editingCategory.id);
                 }
             })
             .catch(error => {
                 console.error("There was an error saving the product:", error);
             });
-            this.hideAddProductPopup();
+            this.hideEditCategoryPopup();
         },
         async logout() {
         await fetch(`http://127.0.0.1:5000/logout?username=${this.$route.query.username}`, {
