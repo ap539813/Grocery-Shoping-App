@@ -148,6 +148,7 @@ class ApprovalRequest(db.Model):
     password = db.Column(db.String(60), nullable=True)
     category = db.Column(db.String(50), nullable=True)
     action = db.Column(db.String(50), nullable=True)
+    category_id = db.Column(db.Integer, nullable=True)
 
     def __repr__(self):
         return f"ApprovalRequest('{self.username}', '{self.category}', '{self.action}')"
@@ -197,6 +198,37 @@ def create_category_request():
         return jsonify({"status": "fail", "message": "Manaer not valid!"}), 200
 
 
+@app.route('/edit_category_request', methods=['POST'])
+def edit_category_request():
+    data = request.json
+    username = data['username']
+    category = data['category']
+    category_id = data['category_id']
+
+    existing_manager = Manager.query.filter_by(username=username).first()
+    if existing_manager:
+        approval_request = ApprovalRequest(username=username, category = category, action="edit_category", category_id = category_id)
+        db.session.add(approval_request)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Category sent for approval to the admin!"}), 200
+    else:
+        return jsonify({"status": "fail", "message": "Manaer not valid!"}), 200
+
+
+@app.route('/delete_category_request', methods=['POST'])
+def delete_category_request():
+    data = request.json
+    username = data['username']
+    category_id = data['category_id']
+
+    existing_manager = Manager.query.filter_by(username=username).first()
+    if existing_manager:
+        approval_request = ApprovalRequest(username=username, action="delete_category", category_id = category_id)
+        db.session.add(approval_request)
+        db.session.commit()
+        return jsonify({"status": "success", "message": "Category sent for approval to the admin!"}), 200
+    else:
+        return jsonify({"status": "fail", "message": "Manaer not valid!"}), 200
 
 @app.route('/pending-requests', methods=['GET'])
 def get_pending_requests():
@@ -258,6 +290,51 @@ def approve_request(request_id):
         except Exception as e:
             print(e)
             return jsonify({'status': 'fail', 'message': 'An error occurred: ' + str(e)}), 500
+    if request_to_approve.action == "edit_category":
+        category_id = request_to_approve.category_id
+        category_name = request_to_approve.category
+        if not category_name:
+            return jsonify({'status': 'fail', 'message': 'Category name is required'}), 400
+    
+        try:
+            # Fetching the category from the database using the category_id
+            category = Category.query.get(category_id)
+            
+            # Checking if the category exists
+            if not category:
+                return jsonify({'status': 'error', 'message': 'Category not found'}), 404
+            
+            # Updating the category name
+            category.name = category_name
+            
+            # Committing the changes to the database
+            db.session.commit()
+            
+            return jsonify({'status': 'success', 'message': 'Category updated successfully!'})
+        except Exception as e:
+            # Handling any exceptions that occur
+            return jsonify({'status': 'error', 'message': 'An error occurred: ' + str(e)}), 500
+    if request_to_approve.action == "delete_category":
+        category_id = request_to_approve.category_id
+        try:
+            # Fetching the category from the database using the category_id
+            category = Category.query.get(category_id)
+            
+            # Checking if the category exists
+            if not category:
+                return jsonify({'status': 'error', "message": "Category not found!"}), 404
+            
+            # Deleting the category from the database
+            db.session.delete(category)
+            
+            # Committing the changes to the database
+            db.session.commit()
+            
+            return jsonify({'status': 'success', "message": "Category deleted successfully!"})
+        except Exception as e:
+            # Handling any exceptions that occur
+            print(e)
+            return jsonify({'status': 'error', "message": "An error occurred while deleting the category: " + str(e)}), 500
     return jsonify({"message": "Request type not handled", "status": "fail"}), 400
 
 
