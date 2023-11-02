@@ -248,7 +248,8 @@ def get_pending_requests():
                             "admin": username, 
                             "requests": [{"id": r.id, 
                                           "username": r.username, 
-                                          "category": r.category} for r in pending_requests]})
+                                          "category": r.category,
+                                          "action": r.action.replace('_', ' ').capitalize()} for r in pending_requests]})
         else:
             logout_user()
             print(current_user)
@@ -306,6 +307,7 @@ def approve_request(request_id):
             
             # Updating the category name
             category.name = category_name
+            db.session.delete(request_to_approve)
             
             # Committing the changes to the database
             db.session.commit()
@@ -329,6 +331,7 @@ def approve_request(request_id):
             
             # Deleting the category from the database
             db.session.delete(category)
+            db.session.delete(request_to_approve)
             
             # Committing the changes to the database
             db.session.commit()
@@ -340,6 +343,19 @@ def approve_request(request_id):
             return jsonify({'status': 'error', "message": "An error occurred while deleting the category: " + str(e)}), 500
     return jsonify({"message": "Request type not handled", "status": "fail"}), 400
 
+
+@app.route('/decline-request/<int:request_id>', methods=['POST'])
+def decline_request(request_id):
+    request_to_approve = ApprovalRequest.query.get(request_id)
+    
+    if not request_to_approve:
+        return jsonify({"message": "Request not found", "status": "fail"}), 404
+    try:
+        db.session.delete(request_to_approve)
+        db.session.commit()
+        return jsonify({'status': 'success', 'message': 'Request declined successfully!'}), 200
+    except:
+        return jsonify({"message": "Request type not handled", "status": "fail"}), 400
 
 @app.route('/login-manager', methods=['GET', 'POST'])
 def manager_login():
@@ -366,6 +382,28 @@ def manager_login():
             return jsonify({"message": "Invalid credentials", "status": "fail"}), 401
     else:
         return jsonify({"message": "Invalid manager", "status": "fail"}), 404
+    
+@app.route('/login-user', methods=['GET', 'POST'])
+def user_login():
+    data = request.json
+    username = data['username']
+    password = data['password']
+
+    print(type(username), type(password))
+
+    current_user = User.query.filter_by(username=username).first()
+
+    if (current_user and current_user.is_authenticated):
+        return jsonify({"message": "Already logged in!!", "status": "success"}), 200
+        # return jsonify({"message": "Already logged in!!", "status": "fail"}), 401
+        
+    if current_user and current_user.password == password:
+        # login_user(current_user, remember=True)
+        current_user.is_authenticated = True
+        db.session.commit()
+        return jsonify({"message": "Login successful!", "status": "success"}), 200
+    else:
+        return jsonify({"message": "Invalid credentials", "status": "fail"}), 401
 
 
 @app.route('/login_admin', methods=['POST'])
@@ -411,6 +449,23 @@ def category():
             return jsonify({"message": "Login failed. Invalid user.", "status": "fail"}), 401
     else:
         return jsonify({"message": "Invalid manager", "status": "fail"}), 404
+    
+@app.route('/categories_user', methods=['GET'])
+def category_user():
+    username = request.args.get('username', None)
+    current_user = User.query.filter_by(username=username).first()
+
+    if (current_user.is_authenticated):
+        categories = Category.query.all()
+        categories_list = [category.as_dict() for category in categories if category]
+        for category in categories:            
+            if category:
+                products_for_category = category.products
+        return jsonify({"categories": categories_list, "user": username}), 200
+    else:
+        print(current_user.is_authenticated)
+        return jsonify({"message": "Login failed. Invalid user.", "status": "fail"}), 401
+
     
 @app.route('/save_category', methods=['POST'])
 def save_category():
