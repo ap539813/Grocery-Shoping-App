@@ -6,6 +6,7 @@ import ManagerLoginPage from './components/ManagerLoginPage.vue';
 import AdminLoginPage from './components/AdminLoginPage.vue';
 import AdminDashboard from './components/AdminDashboard.vue';
 import ManagerDashboard from './components/ManagerDashboard.vue';
+import UserDashboard from './components/UserDashboard.vue';
 
 
 const routes = [
@@ -15,7 +16,8 @@ const routes = [
   { path: '/login/manager', name: 'LoginManager', component: ManagerLoginPage },
   { path: '/login/admin', name: 'LoginAdmin', component: AdminLoginPage },
   { path: '/admin-dashboard', name: 'AdminDashboard', component: AdminDashboard},
-  { path: '/manager-dashboard', name: 'ManagerDashboard', component: ManagerDashboard}
+  { path: '/manager-dashboard', name: 'ManagerDashboard', component: ManagerDashboard},
+  { path: '/user-dashboard', name: 'UserDashboard', component: UserDashboard}
 ];
 
 const router = createRouter({
