@@ -20,13 +20,17 @@
               <th>Username</th>
               <th>Category</th>
               <th>Action</th>
+              <th>Approve Request</th>
+              <th>Decline Request</th>
             </tr>
           </thead>
           <tbody>
             <tr v-for="request in requests" :key="request.id">
               <td>{{ request.username }}</td>
               <td>{{ request.category }}</td>
+              <td>{{ request.action }}</td>
               <td><button @click="approveRequest(request.id)">Approve</button></td>
+              <td><button @click="declineRequest(request.id)">Decline</button></td>
             </tr>
           </tbody>
         </table>
@@ -116,6 +120,22 @@
           }
         } catch (error) {
           console.error("Error approving request:", error);
+        }
+      },
+      async declineRequest(requestId) {
+        try {
+          let response = await fetch(`http://127.0.0.1:5000/decline-request/${requestId}`, {
+            method: "POST"
+          });
+          let data = await response.json();
+          if (data.status === "success") {
+            this.requests = this.requests.filter(request => request.id !== requestId);
+            window.location.reload();
+          } else {
+            console.error("Error declining request:", data.message);
+          }
+        } catch (error) {
+          console.error("Error declining request:", error);
         }
       },
       async fetchUserAndCategories(){
