@@ -106,8 +106,14 @@
       goToCart() {
         this.$router.push({ name: 'cart' });
       },
-      logout() {
-        this.$router.push({ name: 'logout' });
+      async logout() {
+        // this.$router.push({ name: 'Home' });
+        await fetch(`http://127.0.0.1:5000/logout?username=${this.$route.query.username}`, {
+                method: 'GET',
+                credentials: 'include'
+            });
+            this.$router.push({ name: 'Home' });
+            return;
       },
       showBuyPopup(product) {
         this.selectedProduct = product;
