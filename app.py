@@ -465,6 +465,21 @@ def category_user():
     else:
         print(current_user.is_authenticated)
         return jsonify({"message": "Login failed. Invalid user.", "status": "fail"}), 401
+    
+
+@app.route('/cart', methods=['GET'])
+def cart():
+    username = request.args.get('username', None)
+    current_user = User.query.filter_by(username=username).first()
+    print(username)
+
+    if (current_user.is_authenticated):
+        items = CartItem.query.filter_by(user_id=current_user.id).all()
+        item_list = [category.as_dict() for category in items if category]
+        return jsonify({"items": item_list, "user": username}), 200
+    else:
+        print(current_user.is_authenticated)
+        return jsonify({"message": "Login failed. Invalid user.", "status": "fail"}), 401
 
     
 @app.route('/save_category', methods=['POST'])
