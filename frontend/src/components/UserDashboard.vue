@@ -92,7 +92,7 @@
             let data = await response.json();
             console.log(data)
             
-            if (data.categories && data.user) { // Added check to make sure data is present
+            if (data.categories && data.user) {
                 this.categories = data.categories;
                 this.username = data.user;
             } else {
@@ -104,7 +104,7 @@
         }
     },
       goToCart() {
-        this.$router.push({ name: 'cart' });
+        this.$router.push({ name: 'UserCart', query: { username: this.username }});
       },
       async logout() {
         // this.$router.push({ name: 'Home' });
