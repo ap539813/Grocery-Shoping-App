@@ -7,6 +7,7 @@ import AdminLoginPage from './components/AdminLoginPage.vue';
 import AdminDashboard from './components/AdminDashboard.vue';
 import ManagerDashboard from './components/ManagerDashboard.vue';
 import UserDashboard from './components/UserDashboard.vue';
+import CartVue from './components/UserCart.vue';
 
 
 const routes = [
@@ -17,7 +18,8 @@ const routes = [
   { path: '/login/admin', name: 'LoginAdmin', component: AdminLoginPage },
   { path: '/admin-dashboard', name: 'AdminDashboard', component: AdminDashboard},
   { path: '/manager-dashboard', name: 'ManagerDashboard', component: ManagerDashboard},
-  { path: '/user-dashboard', name: 'UserDashboard', component: UserDashboard}
+  { path: '/user-dashboard', name: 'UserDashboard', component: UserDashboard},
+  { path: '/user-cart', name: 'UserCart', component: CartVue}
 ];
 
 const router = createRouter({
