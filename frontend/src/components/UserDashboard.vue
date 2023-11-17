@@ -74,7 +74,8 @@
         buyQuantity: 1,
         cartQuantity: 1,
         totalPrice: 0,
-        cartTotalPrice: 0
+        cartTotalPrice: 0,
+        selectedProductRate: 0,
       };
     },
     methods: {
@@ -129,20 +130,48 @@
       finalizePurchase() {
         // Replace with your API call using Axios or fetch
       },
-      showCartPopup(product) {
-        this.selectedProduct = product;
-        this.cartTotalPrice = product.rate;
+      showCartPopup(rate, id) {
+        console.log(id, rate);
+        this.selectedProduct = id;
+        this.selectedProductRate = rate;
         this.cartPopupVisible = true;
       },
       closeCartPopup() {
         this.cartPopupVisible = false;
       },
       updateCartTotalPrice() {
-        this.cartTotalPrice = (this.selectedProduct.rate * this.cartQuantity).toFixed(2);
+        this.cartTotalPrice = (this.selectedProductRate * this.cartQuantity).toFixed(2);
       },
-      addToCartFinalizePurchase() {
-        // Replace with your API call using Axios or fetch
-      }
+      // addToCartFinalizePurchase() {
+      //   // Replace with your API call using Axios or fetch
+      // }
+      async addToCartFinalizePurchase() {
+            try {
+                const response = await fetch('http://127.0.0.1:5000/add_to_cart_product', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                    body: JSON.stringify({
+                        'product_id': this.selectedProduct,
+                        'quantity': this.cartQuantity,
+                        'user_id': this.username
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                console.error("Error adding product:", data.message);
+                }
+            } catch (error) {
+            console.error("Error adding product:", error);
+            }
+            this.closeCartPopup();
+        },
     },
     mounted() {
       this.fetchUserAndCategories();
@@ -217,7 +246,6 @@
         }
 
         .popup {
-            display: none;
             position: fixed; 
             top: 0; 
             left: 0;
