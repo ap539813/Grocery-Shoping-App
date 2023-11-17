@@ -461,10 +461,12 @@ def category_user():
         for category in categories:            
             if category:
                 products_for_category = category.products
+        print({"categories": categories_list, "user": username})
         return jsonify({"categories": categories_list, "user": username}), 200
     else:
         print(current_user.is_authenticated)
         return jsonify({"message": "Login failed. Invalid user.", "status": "fail"}), 401
+
     
 
 @app.route('/cart', methods=['GET'])
@@ -640,6 +642,48 @@ def delete_product():
 @app.route('/add_category_', methods = ['POST'])
 def save_category_request():
     pass
+
+@app.route('/add_to_cart_product', methods=['POST'])
+def add_to_cart_product():
+    data = request.get_json()
+    print(data)
+    product_id = data['product_id']
+    user_id = data['user_id']
+    quantity_purchased = int(data['quantity'])
+
+    # Commit the changes to the database
+    try:
+        # Fetch the product from your database using the product_id
+        product = Product.query.get(product_id)
+        product_name = product.name
+        unit = product.unit
+        rate = product.rate
+        category = product.category.name
+
+        print(product_name, category)
+
+        cartitem = CartItem(user_id = user_id, product_id = product.id, category = category, product_name = product_name, unit = unit,
+                            quantity = quantity_purchased, rate = rate)
+
+        if not product:
+            return jsonify({'status': 'error', "message": "Product not found!"}), 404
+        
+        # Check if enough stock is available
+        if product.quantity < quantity_purchased:
+            return jsonify({'status': 'error', "message": f"Not enough stock available, remaining_quantity: {product.quantity}"})
+
+        # Subtract the purchased quantity from the product's quantity
+        product.quantity -= quantity_purchased
+        # Add cart item to the session
+        db.session.add(cartitem)
+        db.session.commit()
+        return jsonify({'status': 'success', "message": f"Product added to cart successfully!, remaining_quantity: {product.quantity}"}), 200
+    except Exception as e:
+        # Handle the exception and rollback in case of any errors
+        db.session.rollback()
+        print(e)
+        return jsonify({'status': 'error', "message": "An error occurred: " + str(e)}), 500
+
 if __name__ == "__main__":
     app.run(debug=True, host='localhost', port=5000)
 
