@@ -128,6 +128,93 @@
   </script>
   
   <style scoped>
-  /* Your CSS styles here */
+          .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 20px;
+            background-color: #333;
+            color: white;
+            box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.2);
+        }
+
+        .navbar-left, .navbar-right {
+            display: flex;
+            align-items: center;
+        }
+
+        #manager-username {
+            margin-right: 20px;
+            font-weight: bold;
+        }
+
+        .navbar button {
+            margin-left: 10px;
+            padding: 5px 15px;
+            background-color: #555;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            text-decoration:none
+        }
+
+        .navbar button:hover {
+            background-color: #777;
+            text-decoration:none
+        }
+        .cart-item {
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 10px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .grand-total-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 20px;
+            padding: 10px;
+            border-top: 1px solid #ddd;
+        }
+
+        .grand-total-display {
+            font-weight: bold;
+            font-size: 1.2em;
+        }
+
+        .buy-all-button {
+            padding: 5px 15px;
+            background-color: #555;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            border-radius: 5px;
+        }
+
+        .buy-all-button:hover {
+            background-color: #777;
+        }
+
+
+        .remove-button {
+            padding: 4px 10px;
+            background-color: #ffb3b3;
+            border-radius: 5px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+
+            
+        }
+
+        .remove-button:hover {
+            background-color: #d32f2f; /* Dark Red */
+        }
   </style>
   
