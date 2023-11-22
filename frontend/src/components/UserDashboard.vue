@@ -116,19 +116,52 @@
             this.$router.push({ name: 'Home' });
             return;
       },
-      showBuyPopup(product) {
-        this.selectedProduct = product;
-        this.totalPrice = product.rate;
+      showBuyPopup(rate, id) {
+        this.selectedProduct = id;
+        this.selectedProductRate = rate;
         this.buyPopupVisible = true;
+        this.totalPrice = rate;
       },
       closeBuyPopup() {
         this.buyPopupVisible = false;
       },
       updateTotalPrice() {
-        this.totalPrice = (this.selectedProduct.rate * this.buyQuantity).toFixed(2);
+        if(this.buyQuantity >= 0){
+        this.totalPrice = (this.selectedProductRate * this.buyQuantity).toFixed(2);
+        }
+        else{
+          alert('Qunatity can not be negative!!');
+          this.buyQuantity = 0;
+          this.totalPrice = (this.selectedProductRate * this.buyQuantity).toFixed(2);
+
+        }
       },
-      finalizePurchase() {
-        // Replace with your API call using Axios or fetch
+      async finalizePurchase() {
+        try {
+                const response = await fetch('http://127.0.0.1:5000/purchase_product', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json;charset=UTF-8'
+                    },
+                    body: JSON.stringify({
+                        'product_id': this.selectedProduct,
+                        'quantity': this.buyQuantity,
+                        'user_id': this.username
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (data.status === "success") {
+                    alert(data.message);
+                    window.location.reload();
+                } else {
+                console.error("Error purchasing product:", data.message);
+                }
+            } catch (error) {
+            console.error("Error purchasing product:", error);
+            }
+            this.closeBuyPopup();
       },
       showCartPopup(rate, id) {
         console.log(id, rate);
@@ -140,7 +173,16 @@
         this.cartPopupVisible = false;
       },
       updateCartTotalPrice() {
-        this.cartTotalPrice = (this.selectedProductRate * this.cartQuantity).toFixed(2);
+        
+        if(this.cartQuantity >= 0){
+          this.cartTotalPrice = (this.selectedProductRate * this.cartQuantity).toFixed(2);
+        }
+        else{
+          alert('Qunatity can not be negative!!');
+          this.cartQuantity = 0;
+          this.cartTotalPrice = (this.selectedProductRate * this.cartQuantity).toFixed(2);
+
+        }
       },
       // addToCartFinalizePurchase() {
       //   // Replace with your API call using Axios or fetch
