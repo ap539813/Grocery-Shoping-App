@@ -476,7 +476,7 @@ def cart():
     print(username)
 
     if (current_user.is_authenticated):
-        items = CartItem.query.filter_by(user_id=current_user.id).all()
+        items = CartItem.query.filter_by(user_id=current_user.username).all()
         item_list = [category.as_dict() for category in items if category]
         return jsonify({"items": item_list, "user": username}), 200
     else:
@@ -670,7 +670,7 @@ def add_to_cart_product():
         
         # Check if enough stock is available
         if product.quantity < quantity_purchased:
-            return jsonify({'status': 'error', "message": f"Not enough stock available, remaining_quantity: {product.quantity}"})
+            return jsonify({'status': 'success', "message": f"Not enough stock available, remaining_quantity: {product.quantity}"})
 
         # Subtract the purchased quantity from the product's quantity
         product.quantity -= quantity_purchased
@@ -682,6 +682,75 @@ def add_to_cart_product():
         # Handle the exception and rollback in case of any errors
         db.session.rollback()
         print(e)
+        return jsonify({'status': 'error', "message": "An error occurred: " + str(e)}), 500
+    
+
+@app.route('/remove_item', methods=['POST'])
+def remove_item():
+    data = request.get_json()
+    item_id = data['item_id']
+    
+    # Commit the changes to the database
+    try:        
+        cart_item = CartItem.query.get(item_id)
+        product_id = cart_item.product_id
+        quantity = cart_item.quantity
+
+        product = Product.query.get(product_id)
+
+        if not product:
+            return jsonify({'status': 'error', "message": "Product not found!"}), 404
+        
+        # # Check if enough stock is available
+        # if product.quantity < quantity_purchased:
+        #     return jsonify({"message": f"Not enough stock available, remaining_quantity: {product.quantity}"})
+
+        # Subtract the purchased quantity from the product's quantity
+        product.quantity += quantity
+        # Add cart item to the session
+        db.session.delete(cart_item)
+        db.session.commit()
+        return jsonify({'status': 'success', "message": f"Product deleted from cart successfully!, remaining_quantity: {product.quantity}"}), 200
+    except Exception as e:
+        # Handle the exception and rollback in case of any errors
+        db.session.rollback()
+        print(e)
+        return jsonify({'status': 'error', "message": "An error occurred: " + str(e)}), 500
+    
+@app.route('/purchase_product', methods=['POST'])
+def purchase_product():
+    data = request.get_json()
+    product_id = data['product_id']
+    user_id = data['user_id']
+    quantity_purchased = int(data['quantity'])
+
+    # Commit the changes to the database
+    try:
+        # Fetch the product from your database using the product_id
+        product = Product.query.get(product_id)
+        product_name = product.name
+        unit = product.unit
+        rate = product.rate
+        category = product.category.name
+
+        ledger = Ledger(user_id = user_id, product_id = product.id, category = category, product_name = product_name, unit = unit,
+                            quantity = quantity_purchased, rate = rate)
+
+        if not product:
+            return jsonify({'status': 'error', "message": "Product not found!"}), 404
+        
+        # Check if enough stock is available
+        if product.quantity < quantity_purchased:
+            return jsonify({'status': 'error', "message": f"Not enough stock available, remaining_quantity: {product.quantity}"})
+
+        # Subtract the purchased quantity from the product's quantity
+        product.quantity -= quantity_purchased
+        db.session.add(ledger)
+        db.session.commit()
+        return jsonify({'status': 'success', "message": "Purchase successful!", "remaining_quantity": product.quantity}), 200
+    except Exception as e:
+        # Handle the exception and rollback in case of any errors
+        db.session.rollback()
         return jsonify({'status': 'error', "message": "An error occurred: " + str(e)}), 500
 
 if __name__ == "__main__":
