@@ -9,9 +9,14 @@
         <button @click="logout">Logout</button>
       </div>
     </nav>
+
+    <!-- Search/Filter Button -->
+    <div class="filter-button-container">
+        <button @click="showFilterPopup">Filter</button>
+    </div>
   
     <div class="container">
-      <div v-for="category in categories" :key="category.name" class="category-block">
+      <div v-for="category in filteredCategories" :key="category.name" class="category-block">
         <h2>{{ category.name }}</h2>
         <div class="category-block-inner">
           <div v-for="product in category.products" :key="product.id" class="product-block">
@@ -26,6 +31,39 @@
             </div>
           </div>
         </div>
+      </div>
+    </div>
+
+    
+    <!-- Filter Popup -->
+    <div v-if="filterPopupVisible" class="popup">
+      <div class="popup-content">
+        <span class="close-btn" @click="closeFilterPopup">&times;</span>
+        <h3>Filter Products</h3>
+
+        <div class="popup-input">
+          <label>Categories:</label>
+          <div v-for="category in categories" :key="category.name" class="category-checkbox">
+            <input type="checkbox" :value="category.name" v-model="selectedCategories">
+            <span>{{ category.name }}</span>
+          </div>
+        </div>
+
+        <div class="popup-input">
+          <label for="price-min">Min Price:</label>
+          <input type="number" v-model="minPrice" id="price-min">
+          <br/>
+          <label for="price-max">Max Price:</label>
+          <input type="number" v-model="maxPrice" id="price-max">
+        </div>
+
+        <!-- Manufacturing Date Input -->
+        <div class="popup-input">
+          <label for="manufacturing-date">Manufacturing Date:</label>
+          <input type="date" id="manufacturing-date" v-model="manufacturingDate">
+        </div>
+
+        <button @click="applyFilters">Filter</button>
       </div>
     </div>
   
@@ -76,34 +114,78 @@
         totalPrice: 0,
         cartTotalPrice: 0,
         selectedProductRate: 0,
+        filterPopupVisible: false,
+        selectedCategories: [],
+        manufacturingDate: null,
+        minPrice: null,
+        maxPrice: null,
+
       };
     },
+    computed: {
+      filteredCategories() {
+            // Check if any filters are set
+            const isFilterActive = this.selectedCategories.length > 0 || this.minPrice !== null || this.maxPrice !== null || this.manufacturingDate !== null;
+
+            return this.categories
+              .filter(category => 
+                // If no category filter is active, return true; else, check if the category is selected
+                (this.selectedCategories.length === 0 || this.selectedCategories.includes(category.name))
+              )
+              .map(category => ({
+                ...category,
+                // Filter products in each category based on active filters
+                products: category.products.filter(product => 
+                  (!isFilterActive ||
+                    (
+                      (this.minPrice === null || product.rate >= this.minPrice) && 
+                      (this.maxPrice === null || product.rate <= this.maxPrice) &&
+                      (!this.manufacturingDate || new Date(product.manufacturingDate) >= new Date(this.manufacturingDate))
+                    ))
+                )
+              }))
+              .filter(category => category.products.length > 0); // Filter out categories with no matching products
+          }
+    },
+
     methods: {
         async fetchUserAndCategories(){
-        try {
-            let response = await fetch(`http://127.0.0.1:5000/categories_user?username=${this.$route.query.username}`, {
-                method: 'GET',
-                credentials: 'include'
-            });
-            console.log(response.status);
-            if (response.status === 401 || response.status === 404) {
-                this.$router.push({ name: 'LoginUser' })
-            }
+          try {
+              let response = await fetch(`http://127.0.0.1:5000/categories_user?username=${this.$route.query.username}`, {
+                  method: 'GET',
+                  credentials: 'include'
+              });
+              console.log(response.status);
+              if (response.status === 401 || response.status === 404) {
+                  this.$router.push({ name: 'LoginUser' })
+              }
 
-            let data = await response.json();
-            console.log(data)
-            
-            if (data.categories && data.user) {
-                this.categories = data.categories;
-                this.username = data.user;
-            } else {
-                console.error("Unexpected response data:", data);
-            }
+              let data = await response.json();
+              console.log(data)
+              
+              if (data.categories && data.user) {
+                  this.categories = data.categories;
+                  this.username = data.user;
+              } else {
+                  console.error("Unexpected response data:", data);
+              }
 
-        } catch (error) {
-            console.error("Error fetching pending requests:", error);
-        }
-    },
+          } catch (error) {
+              console.error("Error fetching pending requests:", error);
+          }
+      },
+      showFilterPopup() {
+        this.filterPopupVisible = true;
+      },
+
+      closeFilterPopup() {
+        this.filterPopupVisible = false;
+      },
+      applyFilters() {
+        console.log(this.filteredCategories, this.minPrice, this.maxPrice, this.manufacturingDate);
+
+            this.closeFilterPopup();
+      },
       goToCart() {
         this.$router.push({ name: 'UserCart', query: { username: this.username }});
       },
@@ -222,6 +304,48 @@
   </script>
   
   <style scoped>
+
+        .category-checkbox {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+          }
+
+          .category-checkbox input[type="checkbox"] {
+            margin-right: 10px;
+          }
+      .filter-button-container {
+          /* Position relative to allow absolute positioning of the button */
+          position: relative;
+          /* Ensure it takes the full width to push the button to the right */
+          width: 100%;
+      }
+
+      .filter-button-container button {
+          /* Styling for the filter button */
+          position: absolute; /* Position the button absolutely */
+          top: 10px; /* Adjust as needed for spacing from the top */
+          right: 10px; /* Adjust as needed for spacing from the right */
+          padding: 10px 20px;
+          background-color: skyblue; /* Sky-blue color */
+          color: white;
+          border: none;
+          border-radius: 5px;
+          cursor: pointer;
+          font-size: 16px;
+      }
+
+      .filter-button-container button:hover {
+          background-color: #87CEEB; /* Lighter sky-blue on hover */
+      }
+
+      #category-select {
+          width: 100%; /* Adjust width as needed */
+          height: auto; /* Adjust height as needed */
+          padding: 5px;
+          border: 1px solid #ccc;
+          border-radius: 4px;
+        }
         .container {
             width: 80%;
             margin: 20px auto;
