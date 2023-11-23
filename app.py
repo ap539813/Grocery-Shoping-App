@@ -753,6 +753,45 @@ def purchase_product():
         db.session.rollback()
         return jsonify({'status': 'error', "message": "An error occurred: " + str(e)}), 500
 
+
+@app.route('/buy_all', methods = ['GET', 'POST'])
+def buy_all():
+    data = request.get_json()
+    username = data['user_id']
+    # Start a transaction
+    current_user = User.query.filter_by(username=username).first()
+    print(username)
+
+    if (current_user.is_authenticated):
+        try:
+            cart_items = CartItem.query.filter_by(user_id = current_user.username).all()
+
+            for item in cart_items:
+                ledger_entry = Ledger(
+                    user_id=item.user_id,
+                    product_id=item.product_id,
+                    category=item.category,
+                    product_name=item.product_name,
+                    unit=item.unit,
+                    quantity=item.quantity,
+                    rate=item.rate
+                )
+                db.session.add(ledger_entry)
+
+                db.session.delete(item)
+            
+            db.session.commit()
+
+            return jsonify({'status': 'success', "message": "Purchased items successfully!"}), 200
+
+        except Exception as e:
+            db.session.rollback()
+            return jsonify({'status': 'error', "message": "An error occurred: " + str(e)}), 500
+    else:
+        print(current_user.is_authenticated)
+        return jsonify({'status': 'error', "message": "Login failed. Invalid user.", "status": "fail"}), 401
+
+
 if __name__ == "__main__":
     app.run(debug=True, host='localhost', port=5000)
 
