@@ -1,5 +1,14 @@
 <template>
-  <h1>Manager Login</h1>
+  <!-- Navigation Bar -->
+  <nav class="navbar">
+      <div class="navbar-left">
+        <span id="manager-username">Login Manager</span>
+      </div>
+      <div class="navbar-right">
+        <button @click="goToHome">Home</button>
+      </div>
+    </nav>
+  <!-- <h1>Manager Login</h1> -->
     <div class="user-login-page">
       <input type="text" v-model="username" placeholder="Username" />
       <input type="password" v-model="password" placeholder="Password" />
@@ -16,6 +25,9 @@
       };
     },
     methods: {
+      goToHome() {
+        this.$router.push({ name: 'Home'});
+        },
       async login() {
         try {
           const response = await fetch('http://127.0.0.1:5000/login-manager', {

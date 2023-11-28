@@ -32,6 +32,7 @@
 
       <div v-if="isCreateProductVisible" id="add-product-overlay">
         <div id="add-product-popup">
+        <span class="close-btn" @click="closeBuyPopup">&times;</span>
         <h3>Add Product</h3>
         <form id="add-product-form">
             <input type="hidden" v-model="categoryId" id="category-id-hidden" name="category_name">
