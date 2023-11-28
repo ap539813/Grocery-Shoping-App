@@ -2,7 +2,7 @@
   <!-- Navigation Bar -->
   <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
       <div class="navbar-brand">
-        <span>Login Admin</span>
+        <span>Login Manager</span>
       </div>
       <div class="ml-auto">
         <button class="btn btn-outline-primary" @click="goToHome">Home</button>
