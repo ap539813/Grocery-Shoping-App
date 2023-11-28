@@ -1,20 +1,24 @@
 <template>
-    <div>
-      <nav class="navbar">
-          <div class="navbar-left">
-              <span id="admin-username">{{ adminUsername }}'s Dashboard</span>
-          </div>
-          <div class="navbar-right">
-              <button style="text-decoration:none" @click="navigateToSummary">Summary</button>
-              <button style="text-decoration:none" @click="logout">Logout</button>
-          </div>
-      </nav>
-    </div>
-    <div>
-      <button @click="showRequests = !showRequests">Toggle Pending Requests</button>
-      
+  <div>
+    <!-- Bootstrap Navigation Bar -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+      <div class="navbar-brand">
+        <span id="admin-username">{{ adminUsername }}'s Dashboard</span>
+      </div>
+      <div class="ml-auto">
+        <button class="btn btn-outline-primary" @click="navigateToSummary">Summary</button>
+        <button class="btn btn-outline-primary" @click="logout">Logout</button>
+      </div>
+    </nav>
+
+    <div class="container mt-5">
+      <button class="btn btn-primary mb-3 position-relative" @click="showRequests = !showRequests">
+        Pending Requests
+        <span class="badge-number">{{ numberOfPendingRequests }}</span>
+      </button>
       <div v-if="showRequests">
-        <table>
+        <!-- Bootstrap Table -->
+        <table class="table table-bordered">
           <thead>
             <tr>
               <th>Username</th>
@@ -29,46 +33,45 @@
               <td>{{ request.username }}</td>
               <td>{{ request.category }}</td>
               <td>{{ request.action }}</td>
-              <td><button @click="approveRequest(request.id)">Approve</button></td>
-              <td><button @click="declineRequest(request.id)">Decline</button></td>
+              <td><button class="btn btn-success" @click="approveRequest(request.id)">Approve</button></td>
+              <td><button class="btn btn-danger" @click="declineRequest(request.id)">Decline</button></td>
             </tr>
           </tbody>
         </table>
       </div>
     </div>
 
-      <div>
-        <div id="categories-container">
-            <div v-for="category in categories" :key="category.id" class="category-div" :id="category.id">
-                <h2>{{ category.name }}</h2>
-                <button class="edit-btn" @click="showEditCategoryPopup(category.id)">Edit</button>
-                <button class="delete-btn" @click="deleteCategory(category.id)">Delete</button>
-            </div>
-        </div>
+    <div id="categories-container" class="container mt-3">
+      <div v-for="category in categories" :key="category.id" class="category-div" :id="category.id">
+        <h2>{{ category.name }}</h2>
+        <button class="btn btn-warning edit-btn" @click="showEditCategoryPopup(category.id)">Edit</button>
+        <button class="btn btn-danger delete-btn" @click="deleteCategory(category.id)">Delete</button>
+      </div>
 
-  
-
-      <button id="openBtn" @click = "showCreateCategoryPopup()">Create Category</button>
+      <button id="openBtn" class="btn btn-primary" @click="showCreateCategoryPopup()">Create Category</button>
+    </div>
 
     <!-- Create Category Modal -->
-    <div v-if="isCreateCategoryVisible" id="create-category-overlay">
-        <div id="create-category-popup">
-            <input type="text" v-model="newCategoryName" placeholder="Create a category">
-            <button id="saveBtn" @click="saveCategory">Save</button>
-        </div>
+  <div v-if="isCreateCategoryVisible" id="create-category-overlay">
+    <div id="create-category-popup">
+      <button class="close-btn" @click="isCreateCategoryVisible = false">&times;</button>
+      <input type="text" v-model="newCategoryName" placeholder="Create a category">
+      <button id="saveBtn" class="btn btn-primary" @click="saveCategory">Save</button>
     </div>
+  </div>
 
-    <!-- Edit Category Modal -->
-    <div v-if="isEditCategoryVisible" id="edit-category-overlay">
-        <div id="edit-category-popup">
-            <input type="hidden" v-model="categoryId" id="editing-category-id-hidden" name="category_name">
-            <input type="text" id = "new-category-name" placeholder="Edit category name">
-            <button id="updateBtn" @click="updateCategory">Update</button>
-        </div>
+  <!-- Edit Category Modal -->
+  <div v-if="isEditCategoryVisible" id="edit-category-overlay">
+    <div id="edit-category-popup">
+      <button class="close-btn" @click="isEditCategoryVisible = false">&times;</button>
+      <input type="hidden" v-model="categoryId" id="editing-category-id-hidden" name="category_name">
+      <input type="text" id="new-category-name" placeholder="Edit category name">
+      <button id="updateBtn" class="btn btn-primary" @click="updateCategory">Update</button>
     </div>
-    </div>
-  </template>
-  
+  </div>
+  </div>
+</template>
+
   <script>
   export default {
     data() {
@@ -84,6 +87,7 @@
               id: null,
               name: ''
           },
+          numberOfPendingRequests: 0,
           categoryId: null,
       };
     },
@@ -102,6 +106,7 @@
             this.requests = data.requests;
             this.categories = data.categories;
             this.adminUsername = data.admin;
+            this.numberOfPendingRequests = this.requests.length;
         } catch (error) {
             console.error("Error fetching pending requests:", error);
         }
@@ -259,36 +264,69 @@
   
   <style scoped>
   /* You can add your table styling here */
-  table {
-    width: 100%;
-    border-collapse: collapse;
-  }
-  
-  th, td {
-    border: 1px solid black;
-    padding: 8px;
-    text-align: left;
-  }
-  #create-category-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
-            z-index: 1;
+      table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      
+      th, td {
+        border: 1px solid black;
+        padding: 8px;
+        text-align: left;
+      }
+      .badge-number {
+        position: absolute;
+        top: -10px; /* Adjust these values as needed */
+        right: -10px;
+        width: 20px; /* Badge size */
+        height: 20px;
+        background-color: red;
+        color: white;
+        border-radius: 50%; /* Circular shape */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 12px; /* Font size of the number */
+      }
+
+            #create-category-overlay, #edit-category-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        z-index: 1;
+      }
+
+  /* Popup Styles */
+        #create-category-popup, #edit-category-popup {
+          position: relative;
+          top: 50%;
+          left: 50%;
+          width: 300px;
+          padding: 20px;
+          transform: translate(-50%, -50%);
+          background-color: #fff;
+          text-align: center;
+          border-radius: 10px;
+          padding-bottom: 40px; /* Increased padding at bottom */
         }
 
-        #create-category-popup {
-            position: relative;
-            top: 50%;
-            left: 50%;
-            width: 300px;
-            padding: 20px;
-            transform: translate(-50%, -50%);
-            background-color: #fff;
-            text-align: center;
-            border-radius: 10px;
+        /* Close Button Styles */
+        .close-btn {
+          position: absolute;
+          top: 10px;
+          right: 10px;
+          border: none;
+          background-color: transparent;
+          cursor: pointer;
+          font-size: 20px;
+        }
+
+        /* Input and Button Spacing */
+        input[type="text"] {
+          margin-bottom: 15px; /* Add margin to create space */
         }
 
         #categories-container {
@@ -312,7 +350,7 @@
             position: relative;
         }
 
-        #edit-category-overlay {
+        /* #edit-category-overlay {
             position: fixed;
             top: 0;
             left: 0;
@@ -332,7 +370,7 @@
             background-color: #fff;
             text-align: center;
             border-radius: 10px;
-        }
+        } */
 
         .navbar {
             display: flex;
