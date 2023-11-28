@@ -250,6 +250,7 @@
         this.selectedProduct = id;
         this.selectedProductRate = rate;
         this.cartPopupVisible = true;
+        this.cartTotalPrice = rate;
       },
       closeCartPopup() {
         this.cartPopupVisible = false;
