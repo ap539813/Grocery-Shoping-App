@@ -2,3 +2,4 @@
 *.pyc
 password.json
 celerybeat-schedule.db
+node_modules/.package-lock.json
