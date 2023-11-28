@@ -6,6 +6,14 @@ from datetime import datetime
 import json
 from flask_login import LoginManager, UserMixin, login_user, logout_user #current_user, login_required
 from flask import render_template, redirect, url_for, flash
+
+from flask_mail import Mail #, Message
+# from flask_apscheduler import APScheduler
+
+# from celery import Celery
+
+
+from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
 
 
@@ -21,12 +29,28 @@ CORS(app,
 with open('config.json') as config_file:
     config_data = json.load(config_file)
 
-app.config['SECRET_KEY'] = config_data['SECRET_KEY']
-app.config['SQLALCHEMY_DATABASE_URI'] = config_data['SQLALCHEMY_DATABASE_URI']
+# app.config['SECRET_KEY'] = config_data['SECRET_KEY']
+# app.config['SQLALCHEMY_DATABASE_URI'] = config_data['SQLALCHEMY_DATABASE_URI']
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
+app.config.update(config_data)
+
+with open('password.json') as pass_file:
+    pass_data = json.load(pass_file)
+
+app.config['MAIL_PASSWORD'] = pass_data['MAIL_PASSWORD']
+
+# celery = Celery(app.name, broker=app.config['CELERY_BROKER_URL'])
+# celery.conf.update(app.config)
+
+
+mail = Mail(app)
+mail.init_app(app)
+
 db = SQLAlchemy(app)
 
-
+def create_app():
+    return app
 
 
 # login_manager = LoginManager()
@@ -65,11 +89,13 @@ def logout():
 class Manager(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable = False)
     password = db.Column(db.String(60), nullable=False)
 
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
+    email = db.Column(db.String(100), unique=True, nullable = False)
     password = db.Column(db.String(60), nullable=False)
     is_authenticated = db.Column(db.Boolean, default=False, nullable=False)
 
@@ -148,6 +174,7 @@ class ApprovalRequest(db.Model):
     password = db.Column(db.String(60), nullable=True)
     category = db.Column(db.String(50), nullable=True)
     action = db.Column(db.String(50), nullable=True)
+    email = db.Column(db.String(100))
     category_id = db.Column(db.Integer, nullable=True)
 
     def __repr__(self):
@@ -162,6 +189,7 @@ def register():
     data = request.json
     username = data['username']
     password = data['password']
+    email = data['email']
     is_manager = data['isManager']
 
     existing_user = User.query.filter_by(username=username).first()
@@ -172,12 +200,12 @@ def register():
         return jsonify({"message": "Username already taken!"}), 400
 
     if is_manager:
-        approval_request = ApprovalRequest(username=username, password=password, category="manager", action="registration")
+        approval_request = ApprovalRequest(username=username, password=password, email = email, category="manager", action="registration")
         db.session.add(approval_request)
         db.session.commit()
         return jsonify({"message": "Registration sent for approval to the admin!"}), 200
     else:
-        user = User(username=username, password=password)
+        user = User(username=username, email=email, password=password)
         db.session.add(user)
         db.session.commit()
         return jsonify({"message": "Registration successful!"}), 200
@@ -266,8 +294,8 @@ def approve_request(request_id):
         return jsonify({"message": "Request not found", "status": "fail"}), 404
 
     if request_to_approve.category == "manager":
-        new_manager = Manager(username=request_to_approve.username, password=request_to_approve.password)
-        new_manager_user = User(username=request_to_approve.username, password=request_to_approve.password)
+        new_manager = Manager(username=request_to_approve.username, email=request_to_approve.email, password=request_to_approve.password)
+        new_manager_user = User(username=request_to_approve.username, email=request_to_approve.email, password=request_to_approve.password)
         db.session.add(new_manager)
         db.session.add(new_manager_user)
         
@@ -421,7 +449,7 @@ def login_admin():
         else:
             return jsonify({"message": "Login failed. Invalid credentials.", "status": "fail"}), 401
     else:
-        current_user = User(username=username, password=password, is_authenticated=True)
+        current_user = User(username=username, password=password, email="admin@email.com", is_authenticated=True)
         if username == admin_creds["username"] and password == admin_creds["password"]:
             db.session.add(current_user)
             db.session.commit()
