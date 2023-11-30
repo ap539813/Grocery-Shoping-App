@@ -11,6 +11,7 @@
           </div>
       </nav>
 
+      <button @click="exportProductsAsCSV">Export Products as CSV</button>
       <div id="categories-container">
           <div v-for="category in categories" :key="category.id" class="category-div" :id="category.id">
               <h2>{{ category.name }}</h2>
@@ -146,6 +147,25 @@ export default {
     //         console.error("Error fetching pending requests:", error);
     //     }
     // },
+    async exportProductsAsCSV() {
+        await fetch(`http://127.0.0.1:5000/export_csv?username=${this.$route.query.username}`, {
+                method: 'GET',
+                credentials: 'include'
+            })
+        .then(response => response.blob())
+        .then(blob => {
+            const url = window.URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            a.download = 'products-export.csv';
+            document.body.appendChild(a);
+            a.click();
+            window.URL.revokeObjectURL(url);
+            alert('Your file has downloaded!'); 
+        })
+        .catch(() => alert('oh no!'));
+    },
 
     async fetchUserAndCategories(){
         try {
