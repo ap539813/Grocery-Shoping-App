@@ -1,4 +1,4 @@
-from flask import Flask, request, jsonify, make_response
+from flask import Flask, request, jsonify, send_file
 from flask_sqlalchemy import SQLAlchemy
 
 from sqlalchemy import func
@@ -11,6 +11,11 @@ from flask_mail import Mail #, Message
 # from flask_apscheduler import APScheduler
 
 # from celery import Celery
+
+import csv
+from io import StringIO, BytesIO
+import io
+from sqlalchemy.orm import joinedload
 
 
 from flask_sqlalchemy import SQLAlchemy
@@ -819,7 +824,61 @@ def buy_all():
         print(current_user.is_authenticated)
         return jsonify({'status': 'error', "message": "Login failed. Invalid user.", "status": "fail"}), 401
 
+@app.route('/export_csv', methods=['GET'])
+def export_csv():
+    username = request.args.get('username', None)
+    current_user = User.query.filter_by(username=username).first()
+    manager = Manager.query.filter_by(username=username).first()
 
+    if manager:
+
+        categories = Category.query.options(joinedload(Category.products)).all()
+
+        # Create a string buffer
+        bio = BytesIO()
+        # cw = csv.writer(bio)
+
+        # Wrap the binary buffer with TextIOWrapper for the csv.writer
+        text_stream = io.TextIOWrapper(bio, encoding='utf-8', write_through=True)
+
+        # Create a CSV writer object using the text wrapper
+        cw = csv.writer(text_stream)
+        
+        # Write CSV headers
+        headers = ['Category ID', 'Category Name', 'Product ID', 'Product Name', 'Unit', 'Rate', 'Quantity', 'Manufacturing Date']
+        cw.writerow(headers)
+
+        # Write product details
+        for category in categories:
+            for product in category.products:
+                cw.writerow([
+                    category.id,
+                    category.name,
+                    product.id,
+                    product.name,
+                    product.unit,
+                    product.rate,
+                    product.quantity,
+                    product.manufacturing_date.strftime("%Y-%m-%d") if product.manufacturing_date else ''
+                ])
+
+        # Flush and detach the text wrapper to prevent it from closing the binary buffer
+        text_stream.flush()
+        text_stream.detach()
+
+
+        # Reset buffer position to the beginning
+        bio.seek(0)
+
+        # Send the CSV file to the client
+        return send_file(
+                bio,
+                mimetype='text/csv',
+                as_attachment=True,
+                download_name='products_export.csv'
+            )
+    else:
+        return jsonify({"message": "Invalid manager", "status": "fail"}), 404
 if __name__ == "__main__":
     app.run(debug=True, host='localhost', port=5000)
 
