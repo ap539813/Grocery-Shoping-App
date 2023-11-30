@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Monthly Activity Report</title>
+    <style>
+    </style>
+</head>
+<body>
+    <h1>Monthly Activity Report</h1>
+    <p>Total Expenditure: {{ total_expenditure }}</p>
+    <h2>Orders:</h2>
+    <ul>
+        {% for order in orders %}
+        <li>
+            {{ order.product_name }}: Quantity - {{ order.quantity }}, Rate - {{ order.rate }}
+        </li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
