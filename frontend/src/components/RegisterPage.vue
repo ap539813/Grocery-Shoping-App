@@ -149,9 +149,4 @@ body {
             padding-right: 15px;
         }
 
-        .navbar-left, .navbar-right {
-            display: flex;
-            align-items: center;
-        }
-
 </style>
