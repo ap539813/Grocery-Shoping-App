@@ -13,8 +13,7 @@ from flask_mail import Mail #, Message
 # from celery import Celery
 
 import csv
-from io import StringIO, BytesIO
-import io
+from io import BytesIO, TextIOWrapper
 from sqlalchemy.orm import joinedload
 
 
@@ -832,51 +831,54 @@ def export_csv():
 
     if manager:
 
-        categories = Category.query.options(joinedload(Category.products)).all()
+        if (current_user.is_authenticated):
+            categories = Category.query.options(joinedload(Category.products)).all()
 
-        # Create a string buffer
-        bio = BytesIO()
-        # cw = csv.writer(bio)
+            # Create a string buffer
+            bio = BytesIO()
+            # cw = csv.writer(bio)
 
-        # Wrap the binary buffer with TextIOWrapper for the csv.writer
-        text_stream = io.TextIOWrapper(bio, encoding='utf-8', write_through=True)
+            # Wrap the binary buffer with TextIOWrapper for the csv.writer
+            text_stream = TextIOWrapper(bio, encoding='utf-8', write_through=True)
 
-        # Create a CSV writer object using the text wrapper
-        cw = csv.writer(text_stream)
-        
-        # Write CSV headers
-        headers = ['Category ID', 'Category Name', 'Product ID', 'Product Name', 'Unit', 'Rate', 'Quantity', 'Manufacturing Date']
-        cw.writerow(headers)
+            # Create a CSV writer object using the text wrapper
+            cw = csv.writer(text_stream)
+            
+            # Write CSV headers
+            headers = ['Category ID', 'Category Name', 'Product ID', 'Product Name', 'Unit', 'Rate', 'Quantity', 'Manufacturing Date']
+            cw.writerow(headers)
 
-        # Write product details
-        for category in categories:
-            for product in category.products:
-                cw.writerow([
-                    category.id,
-                    category.name,
-                    product.id,
-                    product.name,
-                    product.unit,
-                    product.rate,
-                    product.quantity,
-                    product.manufacturing_date.strftime("%Y-%m-%d") if product.manufacturing_date else ''
-                ])
+            # Write product details
+            for category in categories:
+                for product in category.products:
+                    cw.writerow([
+                        category.id,
+                        category.name,
+                        product.id,
+                        product.name,
+                        product.unit,
+                        product.rate,
+                        product.quantity,
+                        product.manufacturing_date.strftime("%Y-%m-%d") if product.manufacturing_date else ''
+                    ])
 
-        # Flush and detach the text wrapper to prevent it from closing the binary buffer
-        text_stream.flush()
-        text_stream.detach()
+            # Flush and detach the text wrapper to prevent it from closing the binary buffer
+            text_stream.flush()
+            text_stream.detach()
 
 
-        # Reset buffer position to the beginning
-        bio.seek(0)
+            # Reset buffer position to the beginning
+            bio.seek(0)
 
-        # Send the CSV file to the client
-        return send_file(
-                bio,
-                mimetype='text/csv',
-                as_attachment=True,
-                download_name='products_export.csv'
-            )
+            # Send the CSV file to the client
+            return send_file(
+                    bio,
+                    mimetype='text/csv',
+                    as_attachment=True,
+                    download_name='products_export.csv'
+                )
+        else:
+            return jsonify({"message": "Login failed. Invalid user.", "status": "fail"}), 401
     else:
         return jsonify({"message": "Invalid manager", "status": "fail"}), 404
 if __name__ == "__main__":
