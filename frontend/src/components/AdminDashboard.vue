@@ -6,7 +6,6 @@
         <span id="admin-username">{{ adminUsername }}'s Dashboard</span>
       </div>
       <div class="ml-auto">
-        <button class="btn btn-outline-primary" @click="navigateToSummary">Summary</button>
         <button class="btn btn-outline-primary" @click="logout">Logout</button>
       </div>
     </nav>
@@ -142,20 +141,6 @@
         } catch (error) {
           console.error("Error declining request:", error);
         }
-      },
-      async fetchUserAndCategories(){
-        try {
-              let response = await fetch("http://127.0.0.1:5000/categories", {
-                  method: 'GET',
-                  credentials: 'include'
-              });
-              let data = await response.json();
-              console.log(data)
-              this.categories = data.categories;
-              this.managerUsername = data.manager;
-          } catch (error) {
-              console.error("Error fetching pending requests:", error);
-          }
       },
       showCreateCategoryPopup() {
           this.isCreateCategoryVisible = true;
@@ -310,7 +295,7 @@
           background-color: #fff;
           text-align: center;
           border-radius: 10px;
-          padding-bottom: 40px; /* Increased padding at bottom */
+          /* Increased padding at bottom */
         }
 
         /* Close Button Styles */
@@ -338,7 +323,7 @@
 
         .category-div {
             width: 300px; 
-            height: 300px; 
+            height: 160px; 
             margin: 60px auto; 
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1), 0px 6px 20px rgba(0, 0, 0, 0.13); 
             overflow-y: auto; 
@@ -388,12 +373,6 @@
             box-sizing: border-box; 
             padding-right: 15px;
         }
-
-        .navbar-left, .navbar-right {
-            display: flex;
-            align-items: center;
-        }
-
         #admin-username {
             margin-right: 20px;
             font-weight: bold;
